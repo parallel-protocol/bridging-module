@@ -3,30 +3,28 @@ pragma solidity 0.8.22;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../shared/BridgeableToken.t.sol";
+import "test/Units.t.sol";
 
-contract BridgeableToken_SetFeeRecipient_Integrations_Test is BridgeableToken_Unit_Test {
-    address newFeeRecipient =  vm.addr(100);
+contract BridgeableToken_SetFeesRecipient_Units_Test is Units_Test {
+    address newFeesRecipient = vm.addr(100);
 
-
-    function test_SetFeeRecipient() external {
+    function test_SetFeesRecipient() external {
         vm.startPrank(users.owner);
         vm.expectEmit(address(aBridgeableToken));
-        emit EventsLib.FeeRecipientSet(newFeeRecipient);
-        aBridgeableToken.setFeeRecipient(newFeeRecipient);
-        assertEq(aBridgeableToken.getFeeRecipient(), newFeeRecipient);
+        emit EventsLib.FeesRecipientSet(newFeesRecipient);
+        aBridgeableToken.setFeesRecipient(newFeesRecipient);
+        assertEq(aBridgeableToken.getFeesRecipient(), newFeesRecipient);
     }
 
     function test_RevertWhen_CallerNotOwner() external {
         vm.startPrank(users.hacker);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, users.hacker));
-        aBridgeableToken.setFeeRecipient(newFeeRecipient);
+        aBridgeableToken.setFeesRecipient(newFeesRecipient);
     }
 
     function test_RevertWhen_ValueIsAddressZero() external {
         vm.startPrank(users.owner);
         vm.expectRevert(abi.encodeWithSelector(ErrorsLib.AddressZero.selector));
-        aBridgeableToken.setFeeRecipient(address(0));
+        aBridgeableToken.setFeesRecipient(address(0));
     }
-
 }

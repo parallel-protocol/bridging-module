@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
-import {IERC20, SafeTransferLib} from "contracts/libraries/SafeTransferLib.sol";
-import {ErrorsLib} from "contracts/libraries/ErrorsLib.sol";
+import { IERC20, SafeTransferLib } from "contracts/libraries/SafeTransferLib.sol";
+import { ErrorsLib } from "contracts/libraries/ErrorsLib.sol";
 
 import "test/Base.t.sol";
 
@@ -54,7 +54,7 @@ contract SafeTransferLibSetup is Base_Test {
     ERC20WithoutBoolean public tokenWithoutBoolean;
     ERC20WithBooleanAlwaysFalse public tokenWithBooleanAlwaysFalse;
 
-    function setUp() public override{
+    function setUp() public override {
         tokenWithoutBoolean = new ERC20WithoutBoolean();
         tokenWithBooleanAlwaysFalse = new ERC20WithBooleanAlwaysFalse();
     }

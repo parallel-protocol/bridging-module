@@ -3,16 +3,15 @@ pragma solidity 0.8.22;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../shared/BridgeableToken.t.sol";
+import "test/Units.t.sol";
 
-contract BridgeableToken_ToggleIsolateMode_Integrations_Test is BridgeableToken_Unit_Test {
-
+contract BridgeableToken_ToggleIsolateMode_Units_Test is Units_Test {
     modifier prankOwner() {
         vm.startPrank(users.owner);
         _;
     }
 
-    function test_ToggleIsolateMode_FromFalseToTrue() external prankOwner{
+    function test_ToggleIsolateMode_FromFalseToTrue() external prankOwner {
         vm.expectEmit(address(aBridgeableToken));
         emit EventsLib.IsolateModeToggled(true);
         aBridgeableToken.toggleIsolateMode();
@@ -24,7 +23,7 @@ contract BridgeableToken_ToggleIsolateMode_Integrations_Test is BridgeableToken_
         _;
     }
 
-    function test_ToggleIsolateMode_FromTrueToFalse() external prankOwner initIsIsolateModeToFalse{
+    function test_ToggleIsolateMode_FromTrueToFalse() external prankOwner initIsIsolateModeToFalse {
         vm.expectEmit(address(aBridgeableToken));
         emit EventsLib.IsolateModeToggled(false);
         aBridgeableToken.toggleIsolateMode();
@@ -36,5 +35,4 @@ contract BridgeableToken_ToggleIsolateMode_Integrations_Test is BridgeableToken_
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, users.hacker));
         aBridgeableToken.toggleIsolateMode();
     }
-
 }

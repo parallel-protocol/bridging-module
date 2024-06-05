@@ -6,6 +6,7 @@
     out = 'out'
     test = 'test'
     cache_path = 'cache'
+    gas_reports = ["BridgeableToken"]
     libs = [
         # We provide a set of useful contract utilities
         # in the lib directory of @layerzerolabs/toolbox-foundry:

@@ -4,15 +4,10 @@ pragma solidity 0.8.22;
 struct Users {
     // Default owner for all contracts.
     address payable owner;
-    // Default fee recipient for all contracts.
-    address payable feeRecipient;
+    // Default fees recipient for all contracts.
+    address payable feesRecipient;
     // Impartial user.
     address payable alice;
-    // Default second impartial user.
-    address payable bob;
-    // Default third impartial user.
-    address payable carole;
     // Malicious user.
     address payable hacker;
 }
-

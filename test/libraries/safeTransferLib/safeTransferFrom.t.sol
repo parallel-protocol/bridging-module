@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
-import {IERC20, SafeTransferLib} from "contracts/libraries/SafeTransferLib.sol";
-import {ErrorsLib} from "contracts/libraries/ErrorsLib.sol";
+import { IERC20, SafeTransferLib } from "contracts/libraries/SafeTransferLib.sol";
+import { ErrorsLib } from "contracts/libraries/ErrorsLib.sol";
 
 import "./SafeTransferLibSetup.t.sol";
-
 
 contract SafeTransferLib_SafeTransferFrom_Test is SafeTransferLibSetup {
     function test_SafeTransferFrom(address from, address to, uint256 amount) public {

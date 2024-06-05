@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
+import { Test } from "@forge-std/Test.sol";
+
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { PRBTest } from "@prb-test/PRBTest.sol";
-
-
-abstract contract Assertions is PRBTest {
+abstract contract Assertions is Test {
     //----------------------------------------
     // Events
     //----------------------------------------
 
+    event Log(string err);
     event LogNamedUint64(string key, uint64 value);
-
     event LogNamedUint8(string key, uint8 value);
+    event LogNamedInt256(string key, int256 value);
+    event LogNamedString(string key, string value);
 
     //----------------------------------------
     // Assertions

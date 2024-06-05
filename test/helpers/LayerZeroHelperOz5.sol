@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
-import { PRBTest } from "@prb-test/PRBTest.sol";
+import { Test } from "@forge-std/Test.sol";
 
 // Oz
 import { DoubleEndedQueue } from "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
@@ -37,7 +37,7 @@ import { ExecutorFeeLibMock as ExecutorFeeLib } from "@layerzerolabs/test-devtoo
 /// @title LayerZeroHelperOz5
 /// @notice Helper contract for setting up and managing LayerZero test environments.
 /// @dev Extends PRBTest contract and provides utility functions for setting up mock endpoints and OApps.
-contract LayerZeroHelperOz5 is OptionsHelper, PRBTest {
+contract LayerZeroHelperOz5 is OptionsHelper, Test {
     using OptionsBuilder for bytes;
 
     enum LibraryType {
@@ -330,7 +330,6 @@ contract LayerZeroHelperOz5 is OptionsHelper, PRBTest {
      */
     function verifyPackets(uint32 _dstEid, bytes32 _dstAddress, uint256 _packetAmount, address _composer) public {
         require(endpoints[_dstEid] != address(0), "endpoint not yet registered");
-
         DoubleEndedQueue.Bytes32Deque storage queue = packetsQueue[_dstEid][_dstAddress];
         uint256 pendingPacketsSize = queue.length();
         uint256 numberOfPackets;

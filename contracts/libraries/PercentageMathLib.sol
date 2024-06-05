@@ -17,7 +17,9 @@ library PercentageMathLib {
     function percentMul(uint256 x, uint256 percentage) internal pure returns (uint256 y) {
         // to avoid overflow, value <= (type(uint256).max - HALF_PERCENTAGE_FACTOR) / percentage
         assembly {
-            if mul(percentage, gt(x, div(MAX_UINT256_MINUS_HALF_PERCENTAGE_FACTOR, percentage))) { revert(0, 0) }
+            if mul(percentage, gt(x, div(MAX_UINT256_MINUS_HALF_PERCENTAGE_FACTOR, percentage))) {
+                revert(0, 0)
+            }
 
             y := div(add(mul(x, percentage), HALF_PERCENTAGE_FACTOR), PERCENTAGE_FACTOR)
         }
@@ -36,7 +38,9 @@ library PercentageMathLib {
         assembly {
             y := div(percentage, 2) // Temporary assignment to save gas.
 
-            if iszero(mul(percentage, iszero(gt(x, div(sub(MAX_UINT256, y), PERCENTAGE_FACTOR))))) { revert(0, 0) }
+            if iszero(mul(percentage, iszero(gt(x, div(sub(MAX_UINT256, y), PERCENTAGE_FACTOR))))) {
+                revert(0, 0)
+            }
 
             y := div(add(mul(PERCENTAGE_FACTOR, x), y), percentage)
         }
