@@ -4,6 +4,7 @@ pragma solidity 0.8.22;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
 import { SendParam, MessagingFee, MessagingReceipt, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
@@ -23,7 +24,7 @@ import { MathLib } from "../libraries/MathLib.sol";
 /// @author Murphy Labs
 /// @custom:contact security@murphylabs.io
 /// @notice Contract that using OFT to bridge tokens between chains.
-contract BridgeableToken is OFT, ReentrancyGuard {
+contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     using SafeTransferLib for IERC20;
     using PercentageMathLib for uint256;
     using OFTMsgCodec for bytes;
@@ -125,6 +126,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         payable
         override
         nonReentrant
+        whenNotPaused
         returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt)
     {
         bool isInnerTokenBurned = abi.decode(_sendParam.composeMsg, (bool));
@@ -155,14 +157,14 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     /// @notice Allow user to swap OFT token to innerToken if the amount is within the mint limit.
     /// @dev when the user swap OFT token to innerToken, the OFT token will be burned and the innerToken will be minted.
     /// @param _amount The amount of OFT token to swap.
-    function swapLzTokenToInnerToken(uint256 _amount) external nonReentrant {
+    function swapLzTokenToInnerToken(uint256 _amount) external nonReentrant whenNotPaused {
         _burn(msg.sender, _amount);
 
         uint256 innerTokenAmountToMint = _calculateInnerTokenAmountToMint(_amount);
 
         if (innerTokenAmountToMint != _amount) revert ErrorsLib.MintLimitExceeded();
 
-        _updateStoreOnMint(innerTokenAmountToMint);
+        _updateStorageOnMint(innerTokenAmountToMint);
 
         uint256 feeAmount = innerTokenAmountToMint.percentMul(feesRate);
         if (feeAmount > 0) {
@@ -234,7 +236,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         return burnDailyUsage[day];
     }
 
-    /// @notice Retrieves the max amount of InnerToken mintable regarding limits.
+    /// @notice Retrieves the MAX amount of InnerToken mintable regarding limits.
     function getMaxMintableAmount() external view returns (uint256) {
         if (netMintedAmount >= int256(globalMintLimit)) return 0;
         uint256 max = uint256(int256(globalMintLimit) - netMintedAmount);
@@ -246,7 +248,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         return max;
     }
 
-    /// @notice Retrieves the max amount of InnerToken burnable regarding limits.
+    /// @notice Retrieves the MAX amount of InnerToken burnable regarding limits.
     function getMaxBurnableAmount() external view returns (uint256) {
         if (isIsolateMode && netMintedAmount < 0) return 0;
         if (netMintedAmount <= globalBurnLimit) return 0;
@@ -308,6 +310,18 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         _setFeesRecipient(_newFeesRecipient);
     }
 
+    /// @notice Allow owner to pause the contract
+    /// @dev This function can only be called by the owner
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Allow owner to unpause the contract
+    /// @dev This function can only be called by the owner
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     //-------------------------------------------
     // Internal functions
     //-------------------------------------------
@@ -367,7 +381,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
 
         if (_isInnerTokenToBurn) {
             /// @dev Assert that the amount to burn DO NOT exceed the daily limit.
-            _updateStoreOnBurn(amountSentLD);
+            _updateStorageOnBurn(amountSentLD);
 
             if (isIsolateMode) {
                 /// @dev Assert that the final netMintedAmount is greater than 0.
@@ -415,7 +429,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     ) private returns (uint256 amountReceived, uint256 feeAmount) {
         amountReceived = _calculateInnerTokenAmountToMint(_amountLD);
         if (amountReceived > 0) {
-            _updateStoreOnMint(amountReceived);
+            _updateStorageOnMint(amountReceived);
             if (_isFeeApplicable) {
                 if (feesRate > 0) {
                     feeAmount = amountReceived.percentMul(feesRate);
@@ -428,13 +442,17 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         return (amountReceived, feeAmount);
     }
 
-    function _updateStoreOnMint(uint256 _amountMinted) private {
+    /// @notice Updates the storage when minting new InnerTokens.
+    /// @param _amountMinted The amount of InnerTokens minted.
+    function _updateStorageOnMint(uint256 _amountMinted) private {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
         mintDailyUsage[day] += _amountMinted;
         netMintedAmount += int256(_amountMinted);
     }
 
-    function _updateStoreOnBurn(uint256 _amountBurned) private {
+    /// @notice Updates the storage when burning InnerTokens.
+    /// @param _amountBurned The amount of InnerTokens burned.
+    function _updateStorageOnBurn(uint256 _amountBurned) private {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
         uint256 dailyUsage = burnDailyUsage[day];
         if (dailyUsage + _amountBurned > burnDailyLimit) revert ErrorsLib.BurnDailyLimitReached();
