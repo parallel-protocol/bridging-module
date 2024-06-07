@@ -26,7 +26,7 @@ contract BridgeableToken_SwapLzTokenToInnerToken_Integrations_Test is Integratio
 
     function test_SwapLzTokenToInnerToken(uint256 swapAmount) external {
         vm.startPrank(users.alice);
-        swapAmount = _boundOFTAmountSend(swapAmount, 1e18, bLzParAmount);
+        swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
 
         uint256 expectedFeesAmount = swapAmount.percentMul(DEFAULT_FEE_RATE);
         uint256 expectedReceivedAmount = swapAmount - expectedFeesAmount;
@@ -42,7 +42,7 @@ contract BridgeableToken_SwapLzTokenToInnerToken_Integrations_Test is Integratio
         bBridgeableToken.setFeesRate(0);
 
         vm.startPrank(users.alice);
-        swapAmount = _boundOFTAmountSend(swapAmount, 1e18, bLzParAmount);
+        swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
 
         bBridgeableToken.swapLzTokenToInnerToken(swapAmount);
 
@@ -54,7 +54,7 @@ contract BridgeableToken_SwapLzTokenToInnerToken_Integrations_Test is Integratio
         vm.startPrank(users.owner);
         bBridgeableToken.setMintDailyLimit(0);
 
-        swapAmount = _boundOFTAmountSend(swapAmount, 1e18, bLzParAmount);
+        swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
         vm.startPrank(users.alice);
         vm.expectRevert(ErrorsLib.MintLimitExceeded.selector);
         bBridgeableToken.swapLzTokenToInnerToken(swapAmount);

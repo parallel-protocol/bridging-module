@@ -3,6 +3,6 @@
 pragma solidity ^0.8.20;
 
 interface IERC20MintableAndBurnable {
-  function mint(address account, uint256 amount) external;
-  function burn(address account, uint256 amount) external;
+    function mint(address account, uint256 amount) external;
+    function burn(address account, uint256 amount) external;
 }

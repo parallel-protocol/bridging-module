@@ -56,9 +56,7 @@ abstract contract Integrations_Test is Base_Test {
         vm.startPrank(users.alice);
         aPar.approve(address(aBridgeableToken), INITIAL_BALANCE);
         bPar.approve(address(bBridgeableToken), INITIAL_BALANCE);
-
     }
-
 
     function _sendToken(
         BridgeableToken bridgeableTokenSending,
@@ -81,6 +79,5 @@ abstract contract Integrations_Test is Base_Test {
         MessagingFee memory fees = bridgeableTokenSending.quoteSend(sendParam, false);
         bridgeableTokenSending.send{ value: fees.nativeFee }(sendParam, fees, payable(msgSender));
         verifyPackets(eidReceiver, addressToBytes32(bridgeableTokenReceiver));
-        
     }
 }

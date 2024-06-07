@@ -6,6 +6,7 @@ import "test/Base.t.sol";
 /// @notice Common logic for units tests.
 abstract contract Units_Test is Base_Test {
     BridgeableToken.ConfigParams configParams;
+
     function setUp() public virtual override {
         Base_Test.setUp();
 

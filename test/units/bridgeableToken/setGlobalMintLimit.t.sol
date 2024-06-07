@@ -21,9 +21,9 @@ contract BridgeableToken_SetGlobalMintLimit_Units_Test is Units_Test {
         aBridgeableToken.setGlobalMintLimit(newGlobalMintLimit);
     }
 
-    function test_RevertWhen_ValueExceedMaxInt256() external {
+    function test_RevertWhen_ValueOverflowMaxGlobalLimit() external {
         vm.startPrank(users.owner);
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.GlobalMintLimitCantExceedMaxInt256.selector));
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.GlobalLimitOverFlow.selector));
         aBridgeableToken.setGlobalMintLimit(uint256(type(int256).max) + 1);
     }
 }

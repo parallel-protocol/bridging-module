@@ -14,32 +14,18 @@ abstract contract Utils is Test {
     /// The OFT will then remove the dust from the amount that is sent and compare it to the expected amount recieved.
     /// If both amounts are not equal, the transaction will revert.
     /// cf. https://docs.layerzero.network/v2/developers/evm/oft/quickstart#token-transfer-precision
-    function _boundOFTAmountSend(uint256 amount, uint256 min, uint256 max) internal pure returns (uint256) {
-        // uint256 amountOFTScaled = _scaleAmountToDecimals(amount, INNER_TOKEN_DECIMALS, OFT_SHARED_DECIMALS);
-        // uint256 minOFTScaled = _scaleAmountToDecimals(min, INNER_TOKEN_DECIMALS, OFT_SHARED_DECIMALS);
-        // uint256 maxOFTScaled = _scaleAmountToDecimals(max, INNER_TOKEN_DECIMALS, OFT_SHARED_DECIMALS);
+    function _boundBridgeAmount(uint256 amount, uint256 min, uint256 max) internal pure returns (uint256) {
         return _serializeAmountForOFT(bound(amount, min, max));
-    }
-
-    /// @dev Scales the given amount to the given number of decimals.
-    ///
-    function _scaleAmountToDecimals(
-        uint256 amount,
-        uint8 fromDecimals,
-        uint8 toDecimals
-    ) internal pure returns (uint256) {
-        if (fromDecimals == toDecimals) {
-            return amount;
-        }
-        if (fromDecimals > toDecimals) {
-            return amount / (10 ** (fromDecimals - toDecimals));
-        }
-        return amount * (10 ** (toDecimals - fromDecimals));
     }
 
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
     function _boundBlocks(uint256 blocks) internal pure returns (uint256) {
         return bound(blocks, 1, type(uint32).max);
+    }
+
+    /// @dev Bounds a `uint16` number.
+    function _boundUint16(uint16 x, uint16 min, uint16 max) internal pure returns (uint16) {
+        return uint16(_bound(uint256(x), uint256(min), uint256(max)));
     }
 
     /// @dev Rolls & warps the given number of time forward the blockchain.
@@ -64,6 +50,18 @@ abstract contract Utils is Test {
             );
     }
 
-
-
+    /// @dev Scales the given amount to the given number of decimals.
+    function _scaleAmountToDecimals(
+        uint256 amount,
+        uint8 fromDecimals,
+        uint8 toDecimals
+    ) internal pure returns (uint256) {
+        if (fromDecimals == toDecimals) {
+            return amount;
+        }
+        if (fromDecimals > toDecimals) {
+            return amount / (10 ** (fromDecimals - toDecimals));
+        }
+        return amount * (10 ** (toDecimals - fromDecimals));
+    }
 }

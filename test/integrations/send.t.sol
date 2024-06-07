@@ -11,18 +11,19 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     bool sendLzToken = false;
 
     function test_Send_PAR_Receive_PAR(uint256 amountToSend) external {
-        amountToSend = _boundOFTAmountSend(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
         uint256 expectedFeesAmount = amountToSend.percentMul(DEFAULT_FEE_RATE);
         uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
         vm.startPrank(users.alice);
 
-        _sendToken(aBridgeableToken, address(bBridgeableToken),bEid,sendInnerToken, amountToSend, users.alice);
+        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
         assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
         assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
         assertEq(aBridgeableToken.getNetMintedAmount(), -int256(amountToSend));
+        assertEq(aBridgeableToken.getMaxBurnableAmount(), DEFAULT_BURN_DAILY_LIMIT - amountToSend);
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + expectedReceivedAmount);
         assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
@@ -30,6 +31,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         assertEq(bBridgeableToken.getCurrentMintDailyUsage(), amountToSend);
         assertEq(bBridgeableToken.getCurrentBurnDailyUsage(), 0);
         assertEq(bBridgeableToken.getNetMintedAmount(), int256(amountToSend));
+        assertEq(bBridgeableToken.getMaxMintableAmount(), DEFAULT_MINT_DAILY_LIMIT - amountToSend);
     }
 
     modifier getLzPar() {
@@ -39,7 +41,14 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
 
         /// @dev recieve bLz-PAR
         vm.startPrank(users.alice);
-        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, _serializeAmountForOFT(DEFAULT_BURN_DAILY_LIMIT), users.alice);
+        _sendToken(
+            aBridgeableToken,
+            address(bBridgeableToken),
+            bEid,
+            sendInnerToken,
+            _serializeAmountForOFT(DEFAULT_BURN_DAILY_LIMIT),
+            users.alice
+        );
         _;
     }
 
@@ -47,7 +56,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         vm.startPrank(users.alice);
         uint256 bLzParAmount = _serializeAmountForOFT(DEFAULT_BURN_DAILY_LIMIT);
         uint256 aParAliceBalance = INITIAL_BALANCE - bLzParAmount;
-        amountToSend = _boundOFTAmountSend(amountToSend, 1e18, bLzParAmount);
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, bLzParAmount);
 
         assertEq(aPar.balanceOf(users.alice), aParAliceBalance);
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
@@ -79,10 +88,10 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     }
 
     function test_ReachGlobalMintLimitShouldReceiveLzPAR(uint256 amountToSend) external reachGlobalMintLimit {
-        amountToSend = _boundOFTAmountSend(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
         vm.startPrank(users.alice);
         _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, amountToSend, users.alice);
-        
+
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
         assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
@@ -105,8 +114,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     }
 
     function test_ReachMintDailyLimitShouldReceiveLzPAR(uint256 amountToSend) external reachMintDailyLimit {
-        
-        amountToSend = _boundOFTAmountSend(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
         vm.startPrank(users.alice);
         _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, amountToSend, users.alice);
 
@@ -115,7 +123,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
         assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
         assertEq(aBridgeableToken.getNetMintedAmount(), -int(amountToSend));
-        
+
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
         assertEq(bBridgeableToken.balanceOf(users.alice), amountToSend);
@@ -131,7 +139,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     }
 
     function test_RevertWhen_BurnDailyLimitReached(uint256 amountToSend) external reachBurnDailyLimit {
-        amountToSend = _boundOFTAmountSend(amountToSend, DEFAULT_BURN_DAILY_LIMIT, uint256(type(int256).max));
+        amountToSend = _boundBridgeAmount(amountToSend, DEFAULT_BURN_DAILY_LIMIT, uint256(type(int256).max));
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(
@@ -157,7 +165,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     }
 
     function test_RevertWhen_GlobalBurnLimitReached(uint256 amountToSend) external reachGlobalBurnLimit {
-        amountToSend = _boundOFTAmountSend(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(
@@ -184,7 +192,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     }
 
     function test_RevertWhen_InIsolateModeNetMintedAmountBelowZero(uint256 amountToSend) external setIsolateMode {
-        amountToSend = _boundOFTAmountSend(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(

@@ -22,9 +22,9 @@ contract BridgeableToken_SetGlobalBurnLimit_Units_Test is Units_Test {
         aBridgeableToken.setGlobalBurnLimit(newGlobalBurnLimit);
     }
 
-    function test_RevertWhen_ValueExceedMinInt256() external {
+    function test_RevertWhen_ValueOverflowMaxGlobalLimit() external {
         vm.startPrank(users.owner);
-        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.GlobalBurnLimitCantExceedMinInt256.selector));
-        aBridgeableToken.setGlobalBurnLimit(uint256(type(int256).max) + 2);
+        vm.expectRevert(abi.encodeWithSelector(ErrorsLib.GlobalLimitOverFlow.selector));
+        aBridgeableToken.setGlobalBurnLimit(uint256(type(int256).max) + 1);
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.22;
 
-import {console2} from "@forge-std/console2.sol";
+import { console2 } from "@forge-std/console2.sol";
 
 import "contracts/libraries/ConstantsLib.sol" as ContractConstantsLib;
 import { ErrorsLib } from "contracts/libraries/ErrorsLib.sol";
@@ -11,8 +11,6 @@ import "./helpers/Deploys.sol";
 import "./helpers/Defaults.sol";
 import "./helpers/Assertions.sol";
 import "./helpers/utils.sol";
-
-
 
 /// @notice Base test contract with common logic needed by all tests.
 abstract contract Base_Test is Deploys, Assertions, Defaults, Utils {
@@ -33,6 +31,7 @@ abstract contract Base_Test is Deploys, Assertions, Defaults, Utils {
             owner: _createUser("Owner", false),
             feesRecipient: _createUser("Fee Recipient", false),
             alice: _createUser("Alice", true),
+            bob: _createUser("Bob", true),
             hacker: _createUser("Hacker", true)
         });
     }

@@ -12,8 +12,10 @@ contract BridgeableToken_Constructor_Units_Test is Units_Test {
         assertEq(aBridgeableToken.getFeesRate(), DEFAULT_FEE_RATE);
         assertEq(aBridgeableToken.getMintDailyLimit(), DEFAULT_MINT_DAILY_LIMIT);
         assertEq(aBridgeableToken.getGlobalMintLimit(), DEFAULT_GLOBAL_MINT_LIMIT);
+        assertEq(aBridgeableToken.getMaxMintableAmount(), DEFAULT_MINT_DAILY_LIMIT);
         assertEq(aBridgeableToken.getBurnDailyLimit(), DEFAULT_BURN_DAILY_LIMIT);
         assertEq(aBridgeableToken.getGlobalBurnLimit(), DEFAULT_GLOBAL_BURN_LIMIT);
+        assertEq(aBridgeableToken.getMaxBurnableAmount(), DEFAULT_BURN_DAILY_LIMIT);
     }
 
     function test_revertWhen_InnerTokenIsAddressZero() external {

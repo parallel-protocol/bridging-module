@@ -14,7 +14,7 @@ contract Defaults {
     //----------------------------------------
 
     uint256 public constant ONE_DAY_IN_SECONDS = 1 days;
-    uint256 public constant INITIAL_BALANCE = 100_000e18;
+    uint256 public constant INITIAL_BALANCE = 100_000_000e18;
     uint16 public constant DEFAULT_FEE_RATE = 250; // 2.5%
     uint256 public constant DEFAULT_MINT_DAILY_LIMIT = 1_000e18;
     uint256 public constant DEFAULT_BURN_DAILY_LIMIT = 1_000e18;

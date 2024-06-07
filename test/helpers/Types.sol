@@ -8,6 +8,8 @@ struct Users {
     address payable feesRecipient;
     // Impartial user.
     address payable alice;
+    // Impartial user.
+    address payable bob;
     // Malicious user.
     address payable hacker;
 }

@@ -42,9 +42,6 @@ library ErrorsLib {
     /// @notice Thrown when the amount of OFT token to withdraw in innerToken exceeds the limit.
     error MintLimitExceeded();
 
-    /// @notice Thrown when the new globalBurnLimit value exceed the min int256 value.
-    error GlobalBurnLimitCantExceedMinInt256();
-
-    /// @notice Thrown when the new globalMintLimit value exceed the max int256 value.
-    error GlobalMintLimitCantExceedMaxInt256();
+    /// @notice Thrown when the new globalLimit value exceed `MAX_GLOBAL_LIMIT`.
+    error GlobalLimitOverFlow();
 }

@@ -17,7 +17,7 @@ import { SafeTransferLib } from "../libraries/SafeTransferLib.sol";
 import { PercentageMathLib } from "../libraries/PercentageMathLib.sol";
 import { EventsLib } from "../libraries/EventsLib.sol";
 import { ErrorsLib } from "../libraries/ErrorsLib.sol";
-
+import { MathLib } from "../libraries/MathLib.sol";
 
 /// @title BridgeableToken
 /// @author Murphy Labs
@@ -47,26 +47,26 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     IERC20 private immutable innerToken;
     /// @notice Track the amount difference between minted and burned tokens.
     /// @dev If amount < 0, it means that more tokens were burned than minted.
-    int256 private netMintedAmount;
-    /// @notice Limit the bridge to mint/burn tokens.
-    /// @dev If true, the amount of minted tokens must be greater than the burned tokens.
-    /// if set to True when the `netMintedAmount` is negative, no more tokens can be bridge from this chain.
     bool private isIsolateMode;
     /// @notice The fees rate in basic point.
     uint16 private feesRate;
     /// @notice The fees recipient address.
+    int256 private netMintedAmount;
+    /// @notice Limit the bridge to mint/burn tokens.
+    /// @dev If true, the amount of minted tokens must be greater than the burned tokens.
+    /// if set to True when the `netMintedAmount` is negative, no more tokens can be bridge from this chain.
     address private feesRecipient;
-    /// @notice The daily limit allow to bridge TO this chain.
+    /// @notice The daily limit of InnerToken allowed to bridge TO this chain.
     uint256 private mintDailyLimit;
-    /// @notice The global limit allow to bridge TO this chain.
+    /// @notice The global limit of InnerToken allowed to bridge TO this chain.
     uint256 private globalMintLimit;
-    /// @notice The daily limit allow to bridge FROM this chain.
+    /// @notice The daily limit of InnerToken allowed to bridge FROM this chain.
     uint256 private burnDailyLimit;
-    /// @notice The global limit allow to bridge FROM this chain.
+    /// @notice The global limit of InnerToken allowed to bridge FROM this chain.
     int256 private globalBurnLimit;
-    /// @notice Track the daily usage of minted tokens.
+    /// @notice Track the daily usage of InnerToken minted.
     mapping(uint256 day => uint256 usage) private mintDailyUsage;
-    /// @notice Track the daily usage of burned tokens.
+    /// @notice Track the daily usage of InnerToken burned.
     mapping(uint256 day => uint256 usage) private burnDailyUsage;
 
     //-------------------------------------------
@@ -128,7 +128,6 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt)
     {
         bool isInnerTokenBurned = abi.decode(_sendParam.composeMsg, (bool));
-
         (uint256 amountSentLD, uint256 amountReceived) = _debit(
             isInnerTokenBurned,
             _sendParam.amountLD,
@@ -158,8 +157,12 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     /// @param _amount The amount of OFT token to swap.
     function swapLzTokenToInnerToken(uint256 _amount) external nonReentrant {
         _burn(msg.sender, _amount);
+
         uint256 innerTokenAmountToMint = _calculateInnerTokenAmountToMint(_amount);
+
         if (innerTokenAmountToMint != _amount) revert ErrorsLib.MintLimitExceeded();
+
+        _updateStoreOnMint(innerTokenAmountToMint);
 
         uint256 feeAmount = innerTokenAmountToMint.percentMul(feesRate);
         if (feeAmount > 0) {
@@ -194,7 +197,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
 
     /// @notice The burnable daily limit for the token.
     function getGlobalBurnLimit() external view returns (uint256) {
-        return uint256(-globalBurnLimit);
+        return uint256(MathLib.abs(globalBurnLimit));
     }
 
     /// @notice Whether the `isIsolateMode` is enabled.
@@ -219,7 +222,6 @@ contract BridgeableToken is OFT, ReentrancyGuard {
         return feesRate;
     }
 
-
     /// @notice Retrieves the current daily usage of minted tokens.
     function getCurrentMintDailyUsage() external view returns (uint256) {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
@@ -230,6 +232,34 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     function getCurrentBurnDailyUsage() external view returns (uint256) {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
         return burnDailyUsage[day];
+    }
+
+    /// @notice Retrieves the max amount of InnerToken mintable regarding limits.
+    function getMaxMintableAmount() external view returns (uint256) {
+        if (netMintedAmount >= int256(globalMintLimit)) return 0;
+        uint256 max = uint256(int256(globalMintLimit) - netMintedAmount);
+        uint256 day = block.timestamp / DAY_IN_SECONDS;
+        uint256 dailyUsage = mintDailyUsage[day];
+        if (dailyUsage + max > mintDailyLimit) {
+            max = mintDailyLimit > dailyUsage ? mintDailyLimit - dailyUsage : 0;
+        }
+        return max;
+    }
+
+    /// @notice Retrieves the max amount of InnerToken burnable regarding limits.
+    function getMaxBurnableAmount() external view returns (uint256) {
+        if (isIsolateMode && netMintedAmount < 0) return 0;
+        if (netMintedAmount <= globalBurnLimit) return 0;
+        uint256 max = netMintedAmount < 0
+            ? MathLib.abs(globalBurnLimit + netMintedAmount)
+            : MathLib.abs(globalBurnLimit - netMintedAmount);
+
+        uint256 day = block.timestamp / DAY_IN_SECONDS;
+        uint256 dailyUsage = burnDailyUsage[day];
+        if (dailyUsage + max > burnDailyLimit) {
+            max = burnDailyLimit > dailyUsage ? burnDailyLimit - dailyUsage : 0;
+        }
+        return max;
     }
 
     //-------------------------------------------
@@ -335,15 +365,10 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     ) private returns (uint256 amountSentLD, uint256 amountReceived) {
         (amountSentLD, amountReceived) = _debitView(_amountLD, _minAmountLD, _dstEid);
 
-        if(_isInnerTokenToBurn){
+        if (_isInnerTokenToBurn) {
             /// @dev Assert that the amount to burn DO NOT exceed the daily limit.
-            uint256 day = block.timestamp / DAY_IN_SECONDS;
-            uint256 dailyUsage = burnDailyUsage[day];
-            if (dailyUsage + amountReceived > burnDailyLimit) revert ErrorsLib.BurnDailyLimitReached();
+            _updateStoreOnBurn(amountSentLD);
 
-            burnDailyUsage[day] += amountReceived;
-            netMintedAmount -= int256(amountReceived);
-            
             if (isIsolateMode) {
                 /// @dev Assert that the final netMintedAmount is greater than 0.
                 if (netMintedAmount < 0) revert ErrorsLib.IsolateModeLimitReach();
@@ -390,9 +415,7 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     ) private returns (uint256 amountReceived, uint256 feeAmount) {
         amountReceived = _calculateInnerTokenAmountToMint(_amountLD);
         if (amountReceived > 0) {
-            uint256 day = block.timestamp / DAY_IN_SECONDS;
-            mintDailyUsage[day] += amountReceived;
-            netMintedAmount += int256(amountReceived);
+            _updateStoreOnMint(amountReceived);
             if (_isFeeApplicable) {
                 if (feesRate > 0) {
                     feeAmount = amountReceived.percentMul(feesRate);
@@ -403,6 +426,20 @@ contract BridgeableToken is OFT, ReentrancyGuard {
             IERC20MintableAndBurnable(address(innerToken)).mint(_to, amountReceived);
         }
         return (amountReceived, feeAmount);
+    }
+
+    function _updateStoreOnMint(uint256 _amountMinted) private {
+        uint256 day = block.timestamp / DAY_IN_SECONDS;
+        mintDailyUsage[day] += _amountMinted;
+        netMintedAmount += int256(_amountMinted);
+    }
+
+    function _updateStoreOnBurn(uint256 _amountBurned) private {
+        uint256 day = block.timestamp / DAY_IN_SECONDS;
+        uint256 dailyUsage = burnDailyUsage[day];
+        if (dailyUsage + _amountBurned > burnDailyLimit) revert ErrorsLib.BurnDailyLimitReached();
+        burnDailyUsage[day] += _amountBurned;
+        netMintedAmount -= int256(_amountBurned);
     }
 
     /// @notice Calculates the amount of innerToken to mint.
@@ -437,8 +474,8 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     /// @notice Sets `_newGlobalMintLimit` as `globalMintLimit` of max amount of innerToken mintable.
     /// @param _newGlobalMintLimit The max limit of innerToken mintable.
     function _setGlobalMintLimit(uint256 _newGlobalMintLimit) private {
-        if (_newGlobalMintLimit > uint256(type(int256).max)) {
-            revert ErrorsLib.GlobalMintLimitCantExceedMaxInt256();
+        if (_newGlobalMintLimit > MAX_GLOBAL_LIMIT) {
+            revert ErrorsLib.GlobalLimitOverFlow();
         }
         globalMintLimit = _newGlobalMintLimit;
         emit EventsLib.GlobalMintLimitSet(_newGlobalMintLimit);
@@ -454,10 +491,10 @@ contract BridgeableToken is OFT, ReentrancyGuard {
     /// @notice Sets `_newBurnDailyLimit` as `globalBurnLimit` of max amount of innerToken burnable.
     /// @param _newGlobalBurnLimit The max limit of innerToken burnable.
     function _setGlobalBurnLimit(uint256 _newGlobalBurnLimit) private {
-        if (_newGlobalBurnLimit > uint256(type(int256).min)) {
-            revert ErrorsLib.GlobalBurnLimitCantExceedMinInt256();
+        if (_newGlobalBurnLimit > MAX_GLOBAL_LIMIT) {
+            revert ErrorsLib.GlobalLimitOverFlow();
         }
-        globalBurnLimit = -int256(_newGlobalBurnLimit);
+        globalBurnLimit = MathLib.neg(_newGlobalBurnLimit);
         emit EventsLib.GlobalBurnLimitSet(_newGlobalBurnLimit);
     }
 
