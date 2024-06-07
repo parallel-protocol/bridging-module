@@ -26,6 +26,9 @@ remappings = [
     'ds-test/=node_modules/@layerzerolabs/toolbox-foundry/lib/ds-test',
     '@forge-std/=node_modules/@layerzerolabs/toolbox-foundry/lib/forge-std',
     '@layerzerolabs/=node_modules/@layerzerolabs/',
-    '@openzeppelin/=node_modules/@openzeppelin/',
-    '@prb-test/=node_modules/@prb/test/src/'
+    '@openzeppelin/=node_modules/@openzeppelin/'
 ]
+
+[invariant]
+runs = 256
+depth = 256
