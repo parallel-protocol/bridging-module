@@ -11,5 +11,7 @@ module.exports = {
         'named-parameters-mapping': 'warn',
         'not-rely-on-time': 'off',
         'one-contract-per-file': 'off',
+        'avoid-low-level-calls': 'off',
+        'no-global-import': 'off',
     },
 };
