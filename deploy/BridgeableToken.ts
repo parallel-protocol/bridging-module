@@ -1,9 +1,14 @@
 import assert from 'assert'
 
+import { readFileSync } from 'fs-extra'
 import { type DeployFunction } from 'hardhat-deploy/types'
 
-// TODO declare your contract name here
-const contractName = 'MyOApp'
+import { BridgeableToken } from '../typechain-types/contracts/tokens/BridgeableToken'
+
+import { GAS } from './utils'
+import { BridgeableTokenConfig } from './utils/types'
+
+const contractName = 'BridgeableToken'
 
 const deploy: DeployFunction = async (hre) => {
     const { getNamedAccounts, deployments } = hre
@@ -16,6 +21,19 @@ const deploy: DeployFunction = async (hre) => {
     console.log(`Network: ${hre.network.name}`)
     console.log(`Deployer: ${deployer}`)
 
+    const config: BridgeableTokenConfig = JSON.parse(
+        readFileSync(`./deploy/config/${hre.network.name}/config.json`).toString()
+    )
+
+    const configParams: BridgeableToken.ConfigParamsStruct = {
+        mintDailyLimit: config.mintDailyLimit,
+        globalMintLimit: config.globalBurnLimit,
+        burnDailyLimit: config.burnDailyLimit,
+        globalBurnLimit: config.globalBurnLimit,
+        feesRecipient: config.feesRecipient,
+        feesRate: config.feesRate,
+        isIsolateMode: config.isIsolateMode,
+    }
     // This is an external deployment pulled in from @layerzerolabs/lz-evm-sdk-v2
     //
     // @layerzerolabs/toolbox-hardhat takes care of plugging in the external deployments
@@ -32,19 +50,25 @@ const deploy: DeployFunction = async (hre) => {
     //     eid: EndpointId.AVALANCHE_V2_TESTNET
     //   }
     // }
+    console.log('Deploying BridgeableToken...')
     const endpointV2Deployment = await hre.deployments.get('EndpointV2')
 
-    const { address } = await deploy(contractName, {
+    const bridgeableToken = await deploy(contractName, {
         from: deployer,
         args: [
-            endpointV2Deployment.address, // LayerZero's EndpointV2 address
-            deployer, // owner
+            config.lzName,
+            config.lzSymbol,
+            config.innerTokenAddress,
+            endpointV2Deployment.address,
+            deployer,
+            configParams,
         ],
         log: true,
         skipIfAlreadyDeployed: false,
+        ...GAS,
     })
 
-    console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${address}`)
+    console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${bridgeableToken.address}`)
 }
 
 deploy.tags = [contractName]

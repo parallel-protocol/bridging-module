@@ -106,3 +106,24 @@ By following these steps, you can focus more on creating innovative omnichain so
 <p align="center">
   Join our community on <a href="https://discord-layerzero.netlify.app/discord" style="color: #a77dff">Discord</a> | Follow us on <a href="https://twitter.com/LayerZero_Labs" style="color: #a77dff">Twitter</a>
 </p>
+
+### Sepolia
+
+- AccessController: [0x917b9D8E62739986EC182E0f988C7F938651aFD7](https://sepolia.etherscan.io/address/0x917b9D8E62739986EC182E0f988C7F938651aFD7)
+- AddressProvider : [0x219e6e5eaB5d32Ab7cb003b8b473A5c8512191C0](https://sepolia.etherscan.io/address/0x219e6e5eaB5d32Ab7cb003b8b473A5c8512191C0)
+- PAR : [0x68E88c802F146eAD2f99F3A91Fb880D1A2509672](https://sepolia.etherscan.io/address/0x68E88c802F146eAD2f99F3A91Fb880D1A2509672)
+- BridgeableToken : [0x23f6319939AAA25583d453e7849834cA42c9D278](https://sepolia.etherscan.io/address/0x23f6319939AAA25583d453e7849834cA42c9D278)
+
+### Arbitrum Sepolia
+
+- AccessController: [0x6CFFE4CAacDdFDc641823c23f49eC71158aCd8c5](https://sepolia.arbiscan.io/address/0x6CFFE4CAacDdFDc641823c23f49eC71158aCd8c5)
+- AddressProvider : [0xc0459Eff90be3dCd1aDA71E1E8BDB7619a16c1A4](https://sepolia.arbiscan.io/address/0xc0459Eff90be3dCd1aDA71E1E8BDB7619a16c1A4)
+- PAR : [0x78C48A7d7Fc69735fDab448fe6068bbA44a920E6](https://sepolia.arbiscan.io/address/0x78C48A7d7Fc69735fDab448fe6068bbA44a920E6)
+- BridgeableToken : [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://sepolia.arbiscan.io/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F)
+
+### Amoy
+
+- AccessController: [0x68E88c802F146eAD2f99F3A91Fb880D1A2509672](https://amoy.polygonscan.com/address/0x68E88c802F146eAD2f99F3A91Fb880D1A2509672)
+- AddressProvider : [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://amoy.polygonscan.com/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F)
+- PAR : [0xa04a24Ac56b878877b273A969370Bb4E6e0196e5](https://amoy.polygonscan.com/address/0xa04a24Ac56b878877b273A969370Bb4E6e0196e5)
+- BridgeableToken : [0xa8FFF51a77d03F625178cB521586F9d3445b9675](https://amoy.polygonscan.com/address/0xa8FFF51a77d03F625178cB521586F9d3445b9675)

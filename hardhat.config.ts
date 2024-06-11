@@ -5,6 +5,9 @@
 // - Fill in the environment variables
 import 'dotenv/config'
 
+import '@typechain/hardhat'
+import '@nomicfoundation/hardhat-ethers'
+
 import 'hardhat-deploy'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
@@ -12,6 +15,9 @@ import '@layerzerolabs/toolbox-hardhat'
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 
 import { EndpointId } from '@layerzerolabs/lz-definitions'
+
+import { getRpcURL } from './utils/getRpcURL'
+import { getVerifyConfig } from './utils/getVerifyConfig'
 
 // Set your preferred authentication method
 //
@@ -42,7 +48,7 @@ const config: HardhatUserConfig = {
                 settings: {
                     optimizer: {
                         enabled: true,
-                        runs: 200,
+                        runs: 1000,
                     },
                 },
             },
@@ -51,23 +57,26 @@ const config: HardhatUserConfig = {
     networks: {
         sepolia: {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
-            url: process.env.RPC_URL_SEPOLIA || 'https://rpc.sepolia.org/',
+            url: getRpcURL('sepolia'),
             accounts,
-        },
-        fuji: {
-            eid: EndpointId.AVALANCHE_V2_TESTNET,
-            url: process.env.RPC_URL_FUJI || 'https://rpc.ankr.com/avalanche_fuji',
-            accounts,
+            verify: getVerifyConfig('sepolia'),
         },
         amoy: {
             eid: EndpointId.AMOY_V2_TESTNET,
-            url: process.env.RPC_URL_AMOY || 'https://polygon-amoy-bor-rpc.publicnode.com',
+            url: getRpcURL('amoy'),
             accounts,
+            verify: getVerifyConfig('amoy'),
+        },
+        arbSepolia: {
+            eid: EndpointId.ARBSEP_V2_TESTNET,
+            url: getRpcURL('arbSepolia'),
+            accounts,
+            verify: getVerifyConfig('arbSepolia'),
         },
     },
     namedAccounts: {
         deployer: {
-            default: 0, // wallet address of index[0], of the mnemonic in .env
+            default: 0,
         },
     },
 }
