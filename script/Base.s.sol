@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity 0.8.22;
+
+import { Script, console2 } from "@forge-std/Script.sol";
+
+contract BaseScript is Script {
+    /// @dev The address of the transaction broadcaster.
+    address internal broadcaster;
+
+    modifier broadcast() {
+        uint256 privateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(privateKey);
+        broadcaster = vm.addr(privateKey);
+        _;
+        vm.stopBroadcast();
+    }
+}
