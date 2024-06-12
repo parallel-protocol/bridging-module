@@ -341,7 +341,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         bytes calldata _message,
         address /*_executor*/, // @dev unused in the default implementation.
         bytes calldata /*_extraData*/ // @dev unused in the default implementation.
-    ) internal virtual override {
+    ) internal virtual override nonReentrant {
         // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
         // Thus everything is bytes32() encoded in flight.
         address toAddress = _message.sendTo().bytes32ToAddress();
