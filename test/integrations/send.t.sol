@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
 import "../Integrations.t.sol";
@@ -96,7 +96,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
         assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
         assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(aBridgeableToken.getNetMintedAmount(), -int(amountToSend));
+        assertEq(aBridgeableToken.getNetMintedAmount(), -int256(amountToSend));
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
@@ -122,7 +122,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
         assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
         assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(aBridgeableToken.getNetMintedAmount(), -int(amountToSend));
+        assertEq(aBridgeableToken.getNetMintedAmount(), -int256(amountToSend));
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);

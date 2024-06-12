@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
 import { IERC20, SafeTransferLib } from "contracts/libraries/SafeTransferLib.sol";

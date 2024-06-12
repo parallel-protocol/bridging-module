@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
 import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
@@ -9,6 +9,7 @@ import "../Invariants.t.sol";
 
 contract BridgeableToken_Invariants_Test is Invariants_Test {
     using OptionsBuilder for bytes;
+
     uint256 constant DEFAULT_MAX_BRIDGE_AMOUNT = 10e18;
     uint256 constant CHAIN_PAR_INITIAL_SUPPLY = INITIAL_BALANCE * 2;
 

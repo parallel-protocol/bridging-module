@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
 import "./Base.s.sol";
@@ -16,7 +16,7 @@ contract BridgeTokenScript is BaseScript {
 
     uint256 sendAmount = 10e18; // 10 tokens
     bool sendInnerToken = true;
-    uint32 eidReceiver = 40267; // amoy
+    uint32 eidReceiver = 40267; // amoy (check: https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts) for others networks
 
     // Data are set to bridge 10 PAR from Arbitrum Sepolia to Amoy
     function run() external broadcast {

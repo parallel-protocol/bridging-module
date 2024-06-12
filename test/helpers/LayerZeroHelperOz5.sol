@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
 import { Test } from "@forge-std/Test.sol";
@@ -75,6 +75,7 @@ contract LayerZeroHelperOz5 is OptionsHelper, Test {
      * @param _endpointNum The number of endpoints to create.
      * @param _libraryType The type of message library to use (UltraLightNode or SimpleMessageLib).
      */
+
     function setUpEndpoints(uint8 _endpointNum, LibraryType _libraryType) public {
         EndpointV2[] memory endpointList = new EndpointV2[](_endpointNum);
         uint32[] memory eidList = new uint32[](_endpointNum);
@@ -258,6 +259,7 @@ contract LayerZeroHelperOz5 is OptionsHelper, Test {
      * @dev Sets each OApp as a peer to every other OApp in the provided array, except itself.
      * @param oapps An array of addresses representing the deployed OApp instances.
      */
+
     function wireOApps(address[] memory oapps) public {
         uint256 size = oapps.length;
         for (uint256 i = 0; i < size; i++) {
