@@ -13,7 +13,7 @@
     "lint:js": "eslint '**/*.{js,ts,json}' && prettier --check .",
     "lint:sol": "solhint 'contracts/**/*.sol'",
     "prepare": "husky",
-    "script:bridge": "cross-env && forge script script/Bridge.s.sol --rpc-url ${NETWORK} --broadcast",
+    "script:bridgeToken": "cross-env && forge script scripts/BridgeToken.s.sol --rpc-url ${NETWORK} --broadcast",
     "test": "forge test -vvv --nmt \"^.*invariant.*$\"",
     "test:invariant": "forge test --mt \"^.*invariant.*$\""
   },
