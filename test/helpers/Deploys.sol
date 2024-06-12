@@ -7,7 +7,7 @@ import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 
 import { BridgeableToken } from "contracts/tokens/BridgeableToken.sol";
 
-import { ERC20Mock } from "contracts/mocks/ERC20Mock.sol";
+import { ERC20Mock } from "test/mocks/ERC20Mock.sol";
 
 import { LayerZeroHelperOz5 } from "./LayerZeroHelperOz5.sol";
 
