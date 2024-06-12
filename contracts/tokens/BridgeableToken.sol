@@ -411,7 +411,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         (amountReceived, feeAmount) = _creditInnerToken(_to, _amountLD, _isFeeApplicable);
 
         oftReceived = _amountLD - amountReceived - feeAmount;
-        /// If OftReceived we must be credit to the user OFT tokens to match the total amount he must be credited.
+        /// If OftReceived > 0 we must be credit to the user OFT tokens to match the total amount he must be credited.
         if (oftReceived > 0) {
             _mint(_to, oftReceived);
         }
