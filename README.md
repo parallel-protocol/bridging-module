@@ -1,129 +1,69 @@
-<p align="center">
-  <a href="https://layerzero.network">
-    <img alt="LayerZero" style="width: 400px" src="https://docs.layerzero.network/img/LayerZero_Logo_White.svg"/>
-  </a>
-</p>
+# Overview
 
-<p align="center">
-  <a href="https://layerzero.network" style="color: #a77dff">Homepage</a> | <a href="https://docs.layerzero.network/" style="color: #a77dff">Docs</a> | <a href="https://layerzero.network/developers" style="color: #a77dff">Developers</a>
-</p>
+This repository contains the source code for contracts and testing suites for all of Parallel's omnichain-related contracts. Documentation for each main contract can be found in the [/docs](./docs) folder.
 
-<h1 align="center">OApp Example</h1>
+## Repository Structure
 
-<p align="center">
-  <a href="https://docs.layerzero.network/contracts/oapp" style="color: #a77dff">Quickstart</a> | <a href="https://docs.layerzero.network/contracts/oapp-configuration" style="color: #a77dff">Configuration</a> | <a href="https://docs.layerzero.network/contracts/options" style="color: #a77dff">Message Execution Options</a> | <a href="https://docs.layerzero.network/contracts/endpoint-addresses" style="color: #a77dff">Endpoint Addresses</a>
-</p>
+- [Broadcast](./broadcast) folder contains Foundry transactions executed by scripts.
+- [Contracts](./contracts) folder contains contracts source code.
+- [Deploy](./deploy) folder contains hardhat deployment scripts.
+- [Deployments](./deployments) folder contains info of contracts deployed per network.
+- [Docs](./docs) folder contains all documentation related to main contracts.
+- [Script](./scripts) folder contains Foundry scripts to interact with contracts.
+- [Test](./test) folder contains all tests related to the contracts with mocks and settings.
+- [Utils](./utils) folder contains helper functions.
 
-<p align="center">Template project for getting started with LayerZero's  <code>OApp</code> contract development.</p>
+## Contracts
 
-## 1) Developing Contracts
+The [`BridgeableToken.sol`](./contracts/tokens/BridgeableToken.sol) allow a principal token to be bridgeable by leveraging on [LayerZero's OFT standard](https://docs.layerzero.network/v2/home/protocol/contract-standards#oft) with custom mint/burn limit. See the [BridgeableToken documentation](./docs/bridgeableToken/README.md) for more details.
 
-#### Installing dependencies
+## Getting Started
 
-We recommend using `pnpm` as a package manager (but you can of course use a package manager of your choice):
+### Foundry
 
-```bash
-pnpm install
-```
+Foundry is used for testing and scripting. To
+[Install foundry follow the instructions.](https://book.getfoundry.sh/getting-started/installation)
 
-#### Compiling your contracts
-
-This project supports both `hardhat` and `forge` compilation. By default, the `compile` command will execute both:
+### Install js dependencies
 
 ```bash
-pnpm compile
+npm i
 ```
 
-If you prefer one over the other, you can use the tooling-specific commands:
+### Fill the `.env` file with you data
+
+The Foundry script relies solely on the PRIVATE_KEY. The MNEMONIC is used on the Hardhat side and will override the PRIVATE_KEY if it is defined.
 
 ```bash
-pnpm compile:forge
-pnpm compile:hardhat
+MNEMONIC=
+PRIVATE_KEY=0x...
+ALCHEMY_API_KEY=
 ```
 
-Or adjust the `package.json` to for example remove `forge` build:
-
-```diff
-- "compile": "$npm_execpath run compile:forge && $npm_execpath run compile:hardhat",
-- "compile:forge": "forge build",
-- "compile:hardhat": "hardhat compile",
-+ "compile": "hardhat compile"
-```
-
-#### Running tests
-
-Similarly to the contract compilation, we support both `hardhat` and `forge` tests. By default, the `test` command will execute both:
+### Compile contracts
 
 ```bash
-pnpm test
+npm run compile
 ```
 
-If you prefer one over the other, you can use the tooling-specific commands:
+### Run tests
+
+There are 2 types of tests:
+
+- Classic tests (Units/Integrations) :
 
 ```bash
-pnpm test:forge
-pnpm test:hardhat
+npm run test
 ```
 
-Or adjust the `package.json` to for example remove `hardhat` tests:
-
-```diff
-- "test": "$npm_execpath test:forge && $npm_execpath test:hardhat",
-- "test:forge": "forge test",
-- "test:hardhat": "$npm_execpath hardhat test"
-+ "test": "forge test"
-```
-
-## 2) Deploying Contracts
-
-Set up deployer wallet/account:
-
-- Rename `.env.example` -> `.env`
-- Choose your preferred means of setting up your deployer wallet/account:
-
-```
-MNEMONIC="test test test test test test test test test test test junk"
-or...
-PRIVATE_KEY="0xabc...def"
-```
-
-To deploy your contracts to your desired blockchains, run the following command in your project's folder:
+- Invariant tests:
 
 ```bash
-npx hardhat lz:deploy
+npm run test:invariant
 ```
 
-More information about available CLI arguments can be found using the `--help` flag:
+You will find other useful commands in the [package.json](./package.json) file.
 
-```bash
-npx hardhat lz:deploy --help
-```
+## Licences
 
-By following these steps, you can focus more on creating innovative omnichain solutions and less on the complexities of cross-chain communication.
-
-<br></br>
-
-<p align="center">
-  Join our community on <a href="https://discord-layerzero.netlify.app/discord" style="color: #a77dff">Discord</a> | Follow us on <a href="https://twitter.com/LayerZero_Labs" style="color: #a77dff">Twitter</a>
-</p>
-
-### Sepolia
-
-- AccessController: [0x917b9D8E62739986EC182E0f988C7F938651aFD7](https://sepolia.etherscan.io/address/0x917b9D8E62739986EC182E0f988C7F938651aFD7)
-- AddressProvider : [0x219e6e5eaB5d32Ab7cb003b8b473A5c8512191C0](https://sepolia.etherscan.io/address/0x219e6e5eaB5d32Ab7cb003b8b473A5c8512191C0)
-- PAR : [0x68E88c802F146eAD2f99F3A91Fb880D1A2509672](https://sepolia.etherscan.io/address/0x68E88c802F146eAD2f99F3A91Fb880D1A2509672)
-- BridgeableToken : [0x23f6319939AAA25583d453e7849834cA42c9D278](https://sepolia.etherscan.io/address/0x23f6319939AAA25583d453e7849834cA42c9D278)
-
-### Arbitrum Sepolia
-
-- AccessController: [0x6CFFE4CAacDdFDc641823c23f49eC71158aCd8c5](https://sepolia.arbiscan.io/address/0x6CFFE4CAacDdFDc641823c23f49eC71158aCd8c5)
-- AddressProvider : [0xc0459Eff90be3dCd1aDA71E1E8BDB7619a16c1A4](https://sepolia.arbiscan.io/address/0xc0459Eff90be3dCd1aDA71E1E8BDB7619a16c1A4)
-- PAR : [0x78C48A7d7Fc69735fDab448fe6068bbA44a920E6](https://sepolia.arbiscan.io/address/0x78C48A7d7Fc69735fDab448fe6068bbA44a920E6)
-- BridgeableToken : [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://sepolia.arbiscan.io/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F)
-
-### Amoy
-
-- AccessController: [0x68E88c802F146eAD2f99F3A91Fb880D1A2509672](https://amoy.polygonscan.com/address/0x68E88c802F146eAD2f99F3A91Fb880D1A2509672)
-- AddressProvider : [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://amoy.polygonscan.com/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F)
-- PAR : [0xa04a24Ac56b878877b273A969370Bb4E6e0196e5](https://amoy.polygonscan.com/address/0xa04a24Ac56b878877b273A969370Bb4E6e0196e5)
-- BridgeableToken : [0xa8FFF51a77d03F625178cB521586F9d3445b9675](https://amoy.polygonscan.com/address/0xa8FFF51a77d03F625178cB521586F9d3445b9675)
+All contracts is under the `MIT` License, see [`LICENSE`](./LICENSE).
