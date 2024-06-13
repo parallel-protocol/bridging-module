@@ -33,8 +33,8 @@ library EventsLib {
     // True if the principal token is burn, False for the OFT.
     // Amount of tokens sent in local decimals.
     // Amount of principalTokens received.
+    // GUID of the OFT message.
     event OFTSent(
-        // GUID of the OFT message.
         bytes32 indexed guid,
         uint32 dstEid,
         address indexed fromAddress,
@@ -48,8 +48,8 @@ library EventsLib {
     // Amount of tokens received in local decimals.
     // Amount of OFT received.
     // Amount of the fees in local decimals.
+    // GUID of the OFT message.
     event OFTReceived(
-        // GUID of the OFT message.
         bytes32 indexed guid,
         uint32 srcEid,
         address indexed toAddress,
@@ -57,4 +57,11 @@ library EventsLib {
         uint256 oftReceived,
         uint256 feeAmountLD
     );
+
+    /// @notice Event emitted when the caller swap OFT for principal tokens.
+    /// @param caller Address of the caller.
+    /// @param amountToSwap Amount of OFT to swap.
+    /// @param principalTokenAmountRecieved Amount of principal tokens received.
+    /// @param feeAmount Amount of fees in principal token.
+    event OFTSwapped(address caller, uint256 amountToSwap, uint256 principalTokenAmountRecieved, uint256 feeAmount);
 }

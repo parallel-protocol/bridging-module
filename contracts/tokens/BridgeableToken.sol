@@ -154,7 +154,8 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     }
 
     /// @notice Allow user to swap OFT token to principalToken if the amount is within the mint limit.
-    /// @dev when the user swap OFT token to principalToken, the OFT token will be burned and the principalToken will be minted.
+    /// @dev when the user swap OFT token to principalToken, the OFT token will be burned and the principalToken will be
+    /// minted.
     /// @param _amount The amount of OFT token to swap.
     function swapLzTokenToPrincipalToken(uint256 _amount) external nonReentrant whenNotPaused {
         _burn(msg.sender, _amount);
@@ -166,10 +167,14 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         _updateStorageOnMint(principalTokenAmountToMint);
 
         uint256 feeAmount = principalTokenAmountToMint.percentMul(feesRate);
+        principalTokenAmountToMint = principalTokenAmountToMint - feeAmount;
+
+        emit EventsLib.OFTSwapped(msg.sender, _amount, principalTokenAmountToMint, feeAmount);
+
         if (feeAmount > 0) {
             IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient, feeAmount);
         }
-        IERC20MintableAndBurnable(address(principalToken)).mint(msg.sender, principalTokenAmountToMint - feeAmount);
+        IERC20MintableAndBurnable(address(principalToken)).mint(msg.sender, principalTokenAmountToMint);
     }
 
     //-------------------------------------------
@@ -349,7 +354,8 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         /// was the principalToken or the OFT token. If true, fees could be applied.
         (, bool feeApplicable) = abi.decode(_message.composeMsg(), (bytes32, bool));
 
-        // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
+        // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local
+        // decimals
         (uint256 amountReceived, uint256 oftReceived, uint256 feeAmount) = _credit(
             toAddress,
             _toLD(_message.amountSD()),
@@ -439,7 +445,6 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
             }
             IERC20MintableAndBurnable(address(principalToken)).mint(_to, amountReceived);
         }
-        return (amountReceived, feeAmount);
     }
 
     /// @notice Updates the storage when minting new PrincipalTokens.
