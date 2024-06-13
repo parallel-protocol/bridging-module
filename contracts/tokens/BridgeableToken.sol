@@ -14,7 +14,7 @@ import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OF
 import { IERC20MintableAndBurnable } from "../interfaces/IERC20MintableAndBurnable.sol";
 
 import "../libraries/ConstantsLib.sol";
-import { SafeTransferLib } from "../libraries/SafeTransferLib.sol";
+
 import { PercentageMathLib } from "../libraries/PercentageMathLib.sol";
 import { EventsLib } from "../libraries/EventsLib.sol";
 import { ErrorsLib } from "../libraries/ErrorsLib.sol";
@@ -25,7 +25,6 @@ import { MathLib } from "../libraries/MathLib.sol";
 /// @custom:contact security@murphylabs.io
 /// @notice Contract that using OFT to bridge tokens between chains.
 contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
-    using SafeTransferLib for IERC20;
     using PercentageMathLib for uint256;
     using OFTMsgCodec for bytes;
     using OFTMsgCodec for bytes32;
