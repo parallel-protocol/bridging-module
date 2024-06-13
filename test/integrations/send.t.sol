@@ -7,7 +7,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     using OptionsBuilder for bytes;
     using PercentageMathLib for uint256;
 
-    bool sendInnerToken = true;
+    bool sendPrincipalToken = true;
     bool sendLzToken = false;
 
     function test_Send_PAR_Receive_PAR(uint256 amountToSend) external {
@@ -16,7 +16,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
         vm.startPrank(users.alice);
 
-        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, amountToSend, users.alice);
+        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
@@ -45,7 +45,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
             aBridgeableToken,
             address(bBridgeableToken),
             bEid,
-            sendInnerToken,
+            sendPrincipalToken,
             _serializeAmountForOFT(DEFAULT_BURN_DAILY_LIMIT),
             users.alice
         );
@@ -90,7 +90,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     function test_ReachGlobalMintLimitShouldReceiveLzPAR(uint256 amountToSend) external reachGlobalMintLimit {
         amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
         vm.startPrank(users.alice);
-        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, amountToSend, users.alice);
+        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
@@ -116,7 +116,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     function test_ReachMintDailyLimitShouldReceiveLzPAR(uint256 amountToSend) external reachMintDailyLimit {
         amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
         vm.startPrank(users.alice);
-        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendInnerToken, amountToSend, users.alice);
+        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
@@ -148,7 +148,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
             amountToSend,
             amountToSend,
             options,
-            abi.encode(sendInnerToken),
+            abi.encode(sendPrincipalToken),
             ""
         );
 
@@ -174,7 +174,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
             amountToSend,
             amountToSend,
             options,
-            abi.encode(sendInnerToken),
+            abi.encode(sendPrincipalToken),
             ""
         );
 
@@ -201,7 +201,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
             amountToSend,
             amountToSend,
             options,
-            abi.encode(sendInnerToken),
+            abi.encode(sendPrincipalToken),
             ""
         );
 

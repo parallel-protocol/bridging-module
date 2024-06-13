@@ -7,7 +7,7 @@ contract BridgeableToken_Constructor_Units_Test is Units_Test {
     function test_Constructor() external {
         assertEq(aBridgeableToken.owner(), users.owner);
         assertEq(aBridgeableToken.getFeesRecipient(), users.feesRecipient);
-        assertEq(aBridgeableToken.getInnerToken(), address(aPar));
+        assertEq(aBridgeableToken.getPrincipalToken(), address(aPar));
         assertFalse(aBridgeableToken.getIsIsolateMode());
         assertEq(aBridgeableToken.getFeesRate(), DEFAULT_FEE_RATE);
         assertEq(aBridgeableToken.getMintDailyLimit(), DEFAULT_MINT_DAILY_LIMIT);
@@ -18,7 +18,7 @@ contract BridgeableToken_Constructor_Units_Test is Units_Test {
         assertEq(aBridgeableToken.getMaxBurnableAmount(), DEFAULT_BURN_DAILY_LIMIT);
     }
 
-    function test_revertWhen_InnerTokenIsAddressZero() external {
+    function test_revertWhen_PrincipalTokenIsAddressZero() external {
         vm.expectRevert(abi.encodeWithSelector(ErrorsLib.AddressZero.selector));
         new BridgeableToken(
             "aLz-Par",

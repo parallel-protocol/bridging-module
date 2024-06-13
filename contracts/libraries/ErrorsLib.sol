@@ -39,7 +39,7 @@ library ErrorsLib {
     /// @notice Thrown when a token transferFrom returned false
     error TransferFromReturnedFalse();
 
-    /// @notice Thrown when the amount of OFT token to withdraw in innerToken exceeds the limit.
+    /// @notice Thrown when the amount of OFT token to withdraw in principalToken exceeds the limit.
     error MintLimitExceeded();
 
     /// @notice Thrown when the new globalLimit value exceed `MAX_GLOBAL_LIMIT`.

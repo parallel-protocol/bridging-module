@@ -15,16 +15,16 @@ contract BridgeTokenScript is BaseScript {
     using OptionsBuilder for bytes;
 
     uint256 sendAmount = 10e18; // 10 tokens
-    bool sendInnerToken = true;
+    bool sendPrincipalToken = true;
     uint32 eidReceiver = 40267; // amoy (check: https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts) for others networks
 
     // Data are set to bridge 10 PAR from Arbitrum Sepolia to Amoy
     function run() external broadcast {
-        IERC20 innerToken = IERC20(0x78C48A7d7Fc69735fDab448fe6068bbA44a920E6);
+        IERC20 principalToken = IERC20(0x78C48A7d7Fc69735fDab448fe6068bbA44a920E6);
 
         BridgeableToken bridgeableToken = BridgeableToken(0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F);
 
-        innerToken.approve(address(bridgeableToken), sendAmount);
+        principalToken.approve(address(bridgeableToken), sendAmount);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(
@@ -33,7 +33,7 @@ contract BridgeTokenScript is BaseScript {
             sendAmount,
             sendAmount,
             options,
-            abi.encode(sendInnerToken),
+            abi.encode(sendPrincipalToken),
             ""
         );
         MessagingFee memory fees = bridgeableToken.quoteSend(sendParam, false);

@@ -28,21 +28,33 @@ library EventsLib {
     event FeesRecipientSet(address feesRecipient);
 
     /// @notice Event emitted when the fees recipient is set by the Owner.
+    // Destination Endpoint ID.
+    // Address of the sender on the src chain.
+    // True if the principal token is burn, False for the OFT.
+    // Amount of tokens sent in local decimals.
+    // Amount of principalTokens received.
     event OFTSent(
-        bytes32 indexed guid, // GUID of the OFT message.
-        uint32 dstEid, // Destination Endpoint ID.
-        address indexed fromAddress, // Address of the sender on the src chain.
-        bool isInnerTokenBurned, // True if the inner token is burn, False for the OFT.
-        uint256 amountSentLD, // Amount of tokens sent in local decimals.
-        uint256 amountReceive // Amount of innerTokens received.
+        // GUID of the OFT message.
+        bytes32 indexed guid,
+        uint32 dstEid,
+        address indexed fromAddress,
+        bool isPrincipalTokenBurned,
+        uint256 amountSentLD,
+        uint256 amountReceive
     );
 
+    // Source Endpoint ID.
+    // Address of the recipient on the dst chain.
+    // Amount of tokens received in local decimals.
+    // Amount of OFT received.
+    // Amount of the fees in local decimals.
     event OFTReceived(
-        bytes32 indexed guid, // GUID of the OFT message.
-        uint32 srcEid, // Source Endpoint ID.
-        address indexed toAddress, // Address of the recipient on the dst chain.
-        uint256 amountReceivedLD, // Amount of tokens received in local decimals.
-        uint256 oftReceived, // Amount of OFT received.
-        uint256 feeAmountLD // Amount of the fees in local decimals.
+        // GUID of the OFT message.
+        bytes32 indexed guid,
+        uint32 srcEid,
+        address indexed toAddress,
+        uint256 amountReceivedLD,
+        uint256 oftReceived,
+        uint256 feeAmountLD
     );
 }

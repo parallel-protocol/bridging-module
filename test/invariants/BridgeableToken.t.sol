@@ -25,7 +25,7 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         _weightSelector(this.setFeesRate.selector, 10);
         _weightSelector(this.sendNoRevert.selector, 100);
         _weightSelector(this.getLzToken.selector, 80);
-        _weightSelector(this.swapLzTokenToInnerTokenNoRevert.selector, 20);
+        _weightSelector(this.swapLzTokenToPrincipalTokenNoRevert.selector, 20);
 
         super.setUp();
 
@@ -94,10 +94,10 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         vm.stopPrank();
     }
 
-    function sendNoRevert(uint256 amountToSend, uint256 bridgeSeed, bool sendInnerToken) external logCall("send") {
+    function sendNoRevert(uint256 amountToSend, uint256 bridgeSeed, bool sendPrincipalToken) external logCall("send") {
         BridgeCall memory bridgeCall = _randomBridgeableTokenContract(bridgeSeed);
         amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_MAX_BRIDGE_AMOUNT);
-        _bridgeToken(amountToSend, sendInnerToken, bridgeCall);
+        _bridgeToken(amountToSend, sendPrincipalToken, bridgeCall);
     }
 
     function getLzToken(uint256 amountToSend, uint256 bridgeSeed) external logCall("getLzToken") {
@@ -105,16 +105,16 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         _getLzToken(amountToSend, bridgeSeed);
     }
 
-    function swapLzTokenToInnerTokenNoRevert(
+    function swapLzTokenToPrincipalTokenNoRevert(
         uint256 amountToSwap,
         uint256 bridgeSeed
-    ) external logCall("swapLzTokenToInnerToken") {
+    ) external logCall("swapLzTokenToPrincipalToken") {
         BridgeCall memory bridgeCall = _randomBridgeableTokenContract(bridgeSeed);
         BridgeableToken bridgeableToken = BridgeableToken(bridgeCall.sendingBridgeableToken);
         uint256 senderLzBalance = bridgeableToken.balanceOf(msg.sender);
         if (senderLzBalance == 0) return;
         amountToSwap = _boundBridgeAmount(amountToSwap, 1e18, senderLzBalance);
-        bridgeableToken.swapLzTokenToInnerToken(amountToSwap);
+        bridgeableToken.swapLzTokenToPrincipalToken(amountToSwap);
     }
 
     //-------------------------------------------
@@ -141,12 +141,12 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
 
     function _bridgeToken(
         uint256 amountToSend,
-        bool sendInnerToken,
+        bool sendPrincipalToken,
         BridgeCall memory bridgeCall
     ) internal logCall("bridgeToken") {
         BridgeableToken bridgeableToken = BridgeableToken(bridgeCall.sendingBridgeableToken);
-        if (!sendInnerToken && bridgeableToken.balanceOf(msg.sender) < amountToSend) {
-            sendInnerToken = true;
+        if (!sendPrincipalToken && bridgeableToken.balanceOf(msg.sender) < amountToSend) {
+            sendPrincipalToken = true;
         }
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
@@ -157,7 +157,7 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
             amountToSend,
             amountToSend,
             options,
-            abi.encode(sendInnerToken),
+            abi.encode(sendPrincipalToken),
             ""
         );
         MessagingFee memory fees = bridgeableToken.quoteSend(sendParam, false);

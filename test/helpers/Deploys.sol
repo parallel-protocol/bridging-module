@@ -26,7 +26,7 @@ abstract contract Deploys is LayerZeroHelperOz5 {
     function _deployBridgeableToken(
         string memory _name,
         string memory _symbol,
-        address _innerToken,
+        address _principalToken,
         address _lzEndpoint,
         address _delegate,
         BridgeableToken.ConfigParams memory _configParams
@@ -35,7 +35,7 @@ abstract contract Deploys is LayerZeroHelperOz5 {
             BridgeableToken(
                 _deployOApp(
                     type(BridgeableToken).creationCode,
-                    abi.encode(_name, _symbol, _innerToken, _lzEndpoint, _delegate, _configParams)
+                    abi.encode(_name, _symbol, _principalToken, _lzEndpoint, _delegate, _configParams)
                 )
             );
     }

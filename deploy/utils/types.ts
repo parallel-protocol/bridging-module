@@ -5,8 +5,8 @@ export type Address = `0x${string}`
 export type BridgeableTokenConfig = {
     lzName: string
     lzSymbol: string
-    innerTokenSymbol: string
-    innerTokenAddress: Address
+    principalTokenSymbol: string
+    principalTokenAddress: Address
     delegate: Address
     feesRecipient: Address
     mintDailyLimit: BigNumberish

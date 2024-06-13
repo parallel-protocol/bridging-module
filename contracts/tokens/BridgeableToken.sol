@@ -44,8 +44,8 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     // Storage
     //-------------------------------------------
 
-    /// @notice The innerToken that can be minted and burned.
-    IERC20 private immutable innerToken;
+    /// @notice The principalToken that can be minted and burned.
+    IERC20 private immutable principalToken;
     /// @notice Track the amount difference between minted and burned tokens.
     /// @dev If amount < 0, it means that more tokens were burned than minted.
     bool private isIsolateMode;
@@ -57,17 +57,17 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @dev If true, the amount of minted tokens must be greater than the burned tokens.
     /// if set to True when the `netMintedAmount` is negative, no more tokens can be bridge from this chain.
     address private feesRecipient;
-    /// @notice The daily limit of InnerToken allowed to bridge TO this chain.
+    /// @notice The daily limit of PrincipalToken allowed to bridge TO this chain.
     uint256 private mintDailyLimit;
-    /// @notice The global limit of InnerToken allowed to bridge TO this chain.
+    /// @notice The global limit of PrincipalToken allowed to bridge TO this chain.
     uint256 private globalMintLimit;
-    /// @notice The daily limit of InnerToken allowed to bridge FROM this chain.
+    /// @notice The daily limit of PrincipalToken allowed to bridge FROM this chain.
     uint256 private burnDailyLimit;
-    /// @notice The global limit of InnerToken allowed to bridge FROM this chain.
+    /// @notice The global limit of PrincipalToken allowed to bridge FROM this chain.
     int256 private globalBurnLimit;
-    /// @notice Track the daily usage of InnerToken minted.
+    /// @notice Track the daily usage of PrincipalToken minted.
     mapping(uint256 day => uint256 usage) private mintDailyUsage;
-    /// @notice Track the daily usage of InnerToken burned.
+    /// @notice Track the daily usage of PrincipalToken burned.
     mapping(uint256 day => uint256 usage) private burnDailyUsage;
 
     //-------------------------------------------
@@ -77,20 +77,20 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @notice Constructor for the OFT contract.
     /// @param _name The name of the OFT.
     /// @param _symbol The symbol of the OFT.
-    /// @param _innerToken The innerToken address.
+    /// @param _principalToken The principalToken address.
     /// @param _lzEndpoint The LayerZero endpoint address.
     /// @param _delegate The delegate capable of making OApp configurations inside of the endpoint.
     /// @param _config The configuration parameters for the OFT.
     constructor(
         string memory _name,
         string memory _symbol,
-        address _innerToken,
+        address _principalToken,
         address _lzEndpoint,
         address _delegate,
         ConfigParams memory _config
     ) Ownable(_delegate) OFT(_name, _symbol, _lzEndpoint, _delegate) {
-        if (_innerToken == address(0)) revert ErrorsLib.AddressZero();
-        innerToken = IERC20(_innerToken);
+        if (_principalToken == address(0)) revert ErrorsLib.AddressZero();
+        principalToken = IERC20(_principalToken);
         _setFeesRate(_config.feesRate);
         _setMintDailyLimit(_config.mintDailyLimit);
         _setGlobalMintLimit(_config.globalMintLimit);
@@ -129,9 +129,9 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         whenNotPaused
         returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt)
     {
-        bool isInnerTokenBurned = abi.decode(_sendParam.composeMsg, (bool));
+        bool isPrincipalTokenBurned = abi.decode(_sendParam.composeMsg, (bool));
         (uint256 amountSentLD, uint256 amountReceived) = _debit(
-            isInnerTokenBurned,
+            isPrincipalTokenBurned,
             _sendParam.amountLD,
             _sendParam.minAmountLD,
             _sendParam.dstEid
@@ -148,38 +148,38 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
             msgReceipt.guid,
             _sendParam.dstEid,
             msg.sender,
-            isInnerTokenBurned,
+            isPrincipalTokenBurned,
             amountSentLD,
             amountReceived
         );
     }
 
-    /// @notice Allow user to swap OFT token to innerToken if the amount is within the mint limit.
-    /// @dev when the user swap OFT token to innerToken, the OFT token will be burned and the innerToken will be minted.
+    /// @notice Allow user to swap OFT token to principalToken if the amount is within the mint limit.
+    /// @dev when the user swap OFT token to principalToken, the OFT token will be burned and the principalToken will be minted.
     /// @param _amount The amount of OFT token to swap.
-    function swapLzTokenToInnerToken(uint256 _amount) external nonReentrant whenNotPaused {
+    function swapLzTokenToPrincipalToken(uint256 _amount) external nonReentrant whenNotPaused {
         _burn(msg.sender, _amount);
 
-        uint256 innerTokenAmountToMint = _calculateInnerTokenAmountToMint(_amount);
+        uint256 principalTokenAmountToMint = _calculatePrincipalTokenAmountToMint(_amount);
 
-        if (innerTokenAmountToMint != _amount) revert ErrorsLib.MintLimitExceeded();
+        if (principalTokenAmountToMint != _amount) revert ErrorsLib.MintLimitExceeded();
 
-        _updateStorageOnMint(innerTokenAmountToMint);
+        _updateStorageOnMint(principalTokenAmountToMint);
 
-        uint256 feeAmount = innerTokenAmountToMint.percentMul(feesRate);
+        uint256 feeAmount = principalTokenAmountToMint.percentMul(feesRate);
         if (feeAmount > 0) {
-            IERC20MintableAndBurnable(address(innerToken)).mint(feesRecipient, feeAmount);
+            IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient, feeAmount);
         }
-        IERC20MintableAndBurnable(address(innerToken)).mint(msg.sender, innerTokenAmountToMint - feeAmount);
+        IERC20MintableAndBurnable(address(principalToken)).mint(msg.sender, principalTokenAmountToMint - feeAmount);
     }
 
     //-------------------------------------------
     // External view functions
     //-------------------------------------------
 
-    /// @notice The innerToken address.
-    function getInnerToken() external view returns (address) {
-        return address(innerToken);
+    /// @notice The principalToken address.
+    function getPrincipalToken() external view returns (address) {
+        return address(principalToken);
     }
 
     /// @notice The mintable daily limit for the token.
@@ -214,7 +214,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     }
 
     /// @notice The fees recipient address.
-    /// @dev The recipient receives the innerToken fees.
+    /// @dev The recipient receives the principalToken fees.
     function getFeesRecipient() external view returns (address) {
         return feesRecipient;
     }
@@ -236,7 +236,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         return burnDailyUsage[day];
     }
 
-    /// @notice Retrieves the MAX amount of InnerToken mintable regarding limits.
+    /// @notice Retrieves the MAX amount of PrincipalToken mintable regarding limits.
     function getMaxMintableAmount() external view returns (uint256) {
         if (netMintedAmount >= int256(globalMintLimit)) return 0;
         uint256 max = uint256(int256(globalMintLimit) - netMintedAmount);
@@ -248,7 +248,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         return max;
     }
 
-    /// @notice Retrieves the MAX amount of InnerToken burnable regarding limits.
+    /// @notice Retrieves the MAX amount of PrincipalToken burnable regarding limits.
     function getMaxBurnableAmount() external view returns (uint256) {
         if (isIsolateMode && netMintedAmount < 0) return 0;
         if (netMintedAmount <= globalBurnLimit) return 0;
@@ -273,33 +273,33 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         _setIsolateMode(!isIsolateMode);
     }
 
-    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on innerToken mint.
+    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on principalToken mint.
     /// @dev The fees rate in basic point with a maximum of 10% (10_00 in bp)
     /// @param _newFeesRate The new fees rate in basic point.
     function setFeesRate(uint16 _newFeesRate) external onlyOwner {
         _setFeesRate(_newFeesRate);
     }
 
-    /// @notice Sets `_mintDailyLimit` as `mintDailyLimit` of daily amount of innerToken mintable.
-    /// @param _mintDailyLimit The daily limit of innerToken mintable.
+    /// @notice Sets `_mintDailyLimit` as `mintDailyLimit` of daily amount of principalToken mintable.
+    /// @param _mintDailyLimit The daily limit of principalToken mintable.
     function setMintDailyLimit(uint256 _mintDailyLimit) external onlyOwner {
         _setMintDailyLimit(_mintDailyLimit);
     }
 
-    /// @notice Sets `_globalMintLimit` as `globalMintLimit` of max amount of innerToken mintable.
-    /// @param _globalMintLimit The max limit of innerToken mintable.
+    /// @notice Sets `_globalMintLimit` as `globalMintLimit` of max amount of principalToken mintable.
+    /// @param _globalMintLimit The max limit of principalToken mintable.
     function setGlobalMintLimit(uint256 _globalMintLimit) external onlyOwner {
         _setGlobalMintLimit(_globalMintLimit);
     }
 
-    /// @notice Sets `_burnDailyLimit` as `burnDailyLimit` of daily amount of innerToken burnable.
-    /// @param _burnDailyLimit The daily limit of innerToken burnable.
+    /// @notice Sets `_burnDailyLimit` as `burnDailyLimit` of daily amount of principalToken burnable.
+    /// @param _burnDailyLimit The daily limit of principalToken burnable.
     function setBurnDailyLimit(uint256 _burnDailyLimit) external onlyOwner {
         _setBurnDailyLimit(_burnDailyLimit);
     }
 
-    /// @notice Sets `_globalBurnLimit` as `globalBurnLimit` of max amount of innerToken burnable.
-    /// @param _globalBurnLimit The max limit of innerToken burnable.
+    /// @notice Sets `_globalBurnLimit` as `globalBurnLimit` of max amount of principalToken burnable.
+    /// @param _globalBurnLimit The max limit of principalToken burnable.
     function setGlobalBurnLimit(uint256 _globalBurnLimit) external onlyOwner {
         _setGlobalBurnLimit(_globalBurnLimit);
     }
@@ -346,7 +346,8 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         // Thus everything is bytes32() encoded in flight.
         address toAddress = _message.sendTo().bytes32ToAddress();
 
-        /// @dev Extract if the tokens burn from the original chain was the innerToken or the OFT token. If true, fees could be applied.
+        /// @dev Extract from message if the tokens burned from the original chain
+        /// was the principalToken or the OFT token. If true, fees could be applied.
         (, bool feeApplicable) = abi.decode(_message.composeMsg(), (bytes32, bool));
 
         // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
@@ -365,21 +366,21 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     //-------------------------------------------
 
     /// @dev Burns tokens from the sender's specified balance.
-    /// @param _isInnerTokenToBurn the flag to burn the innerToken or the OFT token from the caller.
+    /// @param _isPrincipalTokenToBurn the flag to burn the principalToken or the OFT token from the caller.
     /// @param _amountLD The amount of tokens to send in local decimals.
     /// @param _minAmountLD The minimum amount to send in local decimals.
     /// @param _dstEid The destination chain ID.
     /// @return amountSentLD The amount sent in local decimals.
     /// @return amountReceived The amount received in local decimals on the remote.
     function _debit(
-        bool _isInnerTokenToBurn,
+        bool _isPrincipalTokenToBurn,
         uint256 _amountLD,
         uint256 _minAmountLD,
         uint32 _dstEid
     ) private returns (uint256 amountSentLD, uint256 amountReceived) {
         (amountSentLD, amountReceived) = _debitView(_amountLD, _minAmountLD, _dstEid);
 
-        if (_isInnerTokenToBurn) {
+        if (_isPrincipalTokenToBurn) {
             /// @dev Assert that the amount to burn DO NOT exceed the daily limit.
             _updateStorageOnBurn(amountSentLD);
 
@@ -390,7 +391,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
                 /// @dev Assert that the final netMintedAmount is greater than the globalBurnLimit.
                 if (netMintedAmount < globalBurnLimit) revert ErrorsLib.GlobalBurnLimitReached();
             }
-            IERC20MintableAndBurnable(address(innerToken)).burn(msg.sender, amountSentLD);
+            IERC20MintableAndBurnable(address(principalToken)).burn(msg.sender, amountSentLD);
         } else {
             _burn(msg.sender, amountSentLD);
         }
@@ -408,7 +409,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         uint32, //_srcEid,
         bool _isFeeApplicable
     ) private returns (uint256 amountReceived, uint256 oftReceived, uint256 feeAmount) {
-        (amountReceived, feeAmount) = _creditInnerToken(_to, _amountLD, _isFeeApplicable);
+        (amountReceived, feeAmount) = _creditPrincipalToken(_to, _amountLD, _isFeeApplicable);
 
         oftReceived = _amountLD - amountReceived - feeAmount;
         /// If OftReceived > 0 we must be credit to the user OFT tokens to match the total amount he must be credited.
@@ -417,41 +418,41 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         }
     }
 
-    /// @notice Calculates and credit inner tokens to `_to` address and the `feesRecipient`.
+    /// @notice Calculates and credit principal tokens to `_to` address and the `feesRecipient`.
     /// @param _to The address to credit the tokens to.
     /// @param _amountLD The amount of token expected to be credited.
-    /// @return amountReceived The amount of inner token minted.
+    /// @return amountReceived The amount of principal token minted.
     /// @return feeAmount The amount of fees token minted.
-    function _creditInnerToken(
+    function _creditPrincipalToken(
         address _to,
         uint256 _amountLD,
         bool _isFeeApplicable
     ) private returns (uint256 amountReceived, uint256 feeAmount) {
-        amountReceived = _calculateInnerTokenAmountToMint(_amountLD);
+        amountReceived = _calculatePrincipalTokenAmountToMint(_amountLD);
         if (amountReceived > 0) {
             _updateStorageOnMint(amountReceived);
             if (_isFeeApplicable) {
                 if (feesRate > 0) {
                     feeAmount = amountReceived.percentMul(feesRate);
                     amountReceived -= feeAmount;
-                    IERC20MintableAndBurnable(address(innerToken)).mint(feesRecipient, feeAmount);
+                    IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient, feeAmount);
                 }
             }
-            IERC20MintableAndBurnable(address(innerToken)).mint(_to, amountReceived);
+            IERC20MintableAndBurnable(address(principalToken)).mint(_to, amountReceived);
         }
         return (amountReceived, feeAmount);
     }
 
-    /// @notice Updates the storage when minting new InnerTokens.
-    /// @param _amountMinted The amount of InnerTokens minted.
+    /// @notice Updates the storage when minting new PrincipalTokens.
+    /// @param _amountMinted The amount of PrincipalTokens minted.
     function _updateStorageOnMint(uint256 _amountMinted) private {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
         mintDailyUsage[day] += _amountMinted;
         netMintedAmount += int256(_amountMinted);
     }
 
-    /// @notice Updates the storage when burning InnerTokens.
-    /// @param _amountBurned The amount of InnerTokens burned.
+    /// @notice Updates the storage when burning PrincipalTokens.
+    /// @param _amountBurned The amount of PrincipalTokens burned.
     function _updateStorageOnBurn(uint256 _amountBurned) private {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
         uint256 dailyUsage = burnDailyUsage[day];
@@ -460,18 +461,20 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         netMintedAmount -= int256(_amountBurned);
     }
 
-    /// @notice Calculates the amount of innerToken to mint.
-    /// @dev The amount of innerToken that can be minted regarding the limits.
+    /// @notice Calculates the amount of principalToken to mint.
+    /// @dev The amount of principalToken that can be minted regarding the limits.
     /// @param _amountLD The amount of token expected to be minted.
-    /// @return innerTokenAmountToMint The total amount of innerToken to mint.
-    function _calculateInnerTokenAmountToMint(uint256 _amountLD) private view returns (uint256 innerTokenAmountToMint) {
-        innerTokenAmountToMint = int256(_amountLD) + netMintedAmount > int256(globalMintLimit)
+    /// @return principalTokenAmountToMint The total amount of principalToken to mint.
+    function _calculatePrincipalTokenAmountToMint(
+        uint256 _amountLD
+    ) private view returns (uint256 principalTokenAmountToMint) {
+        principalTokenAmountToMint = int256(_amountLD) + netMintedAmount > int256(globalMintLimit)
             ? globalMintLimit - uint256(netMintedAmount)
             : _amountLD;
         uint256 day = block.timestamp / DAY_IN_SECONDS;
         uint256 dailyUsage = mintDailyUsage[day];
-        if (dailyUsage + innerTokenAmountToMint > mintDailyLimit) {
-            innerTokenAmountToMint = mintDailyLimit > dailyUsage ? mintDailyLimit - dailyUsage : 0;
+        if (dailyUsage + principalTokenAmountToMint > mintDailyLimit) {
+            principalTokenAmountToMint = mintDailyLimit > dailyUsage ? mintDailyLimit - dailyUsage : 0;
         }
     }
 
@@ -482,15 +485,15 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         emit EventsLib.IsolateModeToggled(_isIsolateMode);
     }
 
-    /// @notice Sets `_newMintDailyLimit` as `mintDailyLimit` of daily amount of innerToken mintable.
-    /// @param _newMintDailyLimit The daily limit of innerToken mintable.
+    /// @notice Sets `_newMintDailyLimit` as `mintDailyLimit` of daily amount of principalToken mintable.
+    /// @param _newMintDailyLimit The daily limit of principalToken mintable.
     function _setMintDailyLimit(uint256 _newMintDailyLimit) private {
         mintDailyLimit = _newMintDailyLimit;
         emit EventsLib.MintableDailyLimitSet(_newMintDailyLimit);
     }
 
-    /// @notice Sets `_newGlobalMintLimit` as `globalMintLimit` of max amount of innerToken mintable.
-    /// @param _newGlobalMintLimit The max limit of innerToken mintable.
+    /// @notice Sets `_newGlobalMintLimit` as `globalMintLimit` of max amount of principalToken mintable.
+    /// @param _newGlobalMintLimit The max limit of principalToken mintable.
     function _setGlobalMintLimit(uint256 _newGlobalMintLimit) private {
         if (_newGlobalMintLimit > MAX_GLOBAL_LIMIT) {
             revert ErrorsLib.GlobalLimitOverFlow();
@@ -499,15 +502,15 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         emit EventsLib.GlobalMintLimitSet(_newGlobalMintLimit);
     }
 
-    /// @notice Sets `_newBurnDailyLimit` as `burnDailyLimit` of daily amount of innerToken burnable.
-    /// @param _newBurnDailyLimit The daily limit of innerToken burnable.
+    /// @notice Sets `_newBurnDailyLimit` as `burnDailyLimit` of daily amount of principalToken burnable.
+    /// @param _newBurnDailyLimit The daily limit of principalToken burnable.
     function _setBurnDailyLimit(uint256 _newBurnDailyLimit) private {
         burnDailyLimit = _newBurnDailyLimit;
         emit EventsLib.BurnableDailyLimitSet(_newBurnDailyLimit);
     }
 
-    /// @notice Sets `_newBurnDailyLimit` as `globalBurnLimit` of max amount of innerToken burnable.
-    /// @param _newGlobalBurnLimit The max limit of innerToken burnable.
+    /// @notice Sets `_newBurnDailyLimit` as `globalBurnLimit` of max amount of principalToken burnable.
+    /// @param _newGlobalBurnLimit The max limit of principalToken burnable.
     function _setGlobalBurnLimit(uint256 _newGlobalBurnLimit) private {
         if (_newGlobalBurnLimit > MAX_GLOBAL_LIMIT) {
             revert ErrorsLib.GlobalLimitOverFlow();
@@ -516,7 +519,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         emit EventsLib.GlobalBurnLimitSet(_newGlobalBurnLimit);
     }
 
-    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on innerToken mint.
+    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on principalToken mint.
     /// @param _newFeesRate The new fees rate in basic point.
     function _setFeesRate(uint16 _newFeesRate) private {
         if (_newFeesRate > MAX_FEE) revert ErrorsLib.MaxFeesRateExceeded();

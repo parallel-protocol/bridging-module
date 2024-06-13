@@ -3,7 +3,7 @@ pragma solidity 0.8.22;
 
 import "../Integrations.t.sol";
 
-contract BridgeableToken_SwapLzTokenToInnerToken_Integrations_Test is Integrations_Test {
+contract BridgeableToken_SwapLzTokenToPrincipalToken_Integrations_Test is Integrations_Test {
     using OptionsBuilder for bytes;
     using PercentageMathLib for uint256;
 
@@ -24,27 +24,27 @@ contract BridgeableToken_SwapLzTokenToInnerToken_Integrations_Test is Integratio
         bBridgeableToken.setMintDailyLimit(DEFAULT_MINT_DAILY_LIMIT);
     }
 
-    function test_SwapLzTokenToInnerToken(uint256 swapAmount) external {
+    function test_SwapLzTokenToPrincipalToken(uint256 swapAmount) external {
         vm.startPrank(users.alice);
         swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
 
         uint256 expectedFeesAmount = swapAmount.percentMul(DEFAULT_FEE_RATE);
         uint256 expectedReceivedAmount = swapAmount - expectedFeesAmount;
 
-        bBridgeableToken.swapLzTokenToInnerToken(swapAmount);
+        bBridgeableToken.swapLzTokenToPrincipalToken(swapAmount);
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + expectedReceivedAmount);
         assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
     }
 
-    function test_SwapLzTokenToInnerToken_WithoutFees(uint256 swapAmount) external {
+    function test_SwapLzTokenToPrincipalToken_WithoutFees(uint256 swapAmount) external {
         vm.startPrank(users.owner);
         bBridgeableToken.setFeesRate(0);
 
         vm.startPrank(users.alice);
         swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
 
-        bBridgeableToken.swapLzTokenToInnerToken(swapAmount);
+        bBridgeableToken.swapLzTokenToPrincipalToken(swapAmount);
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + swapAmount);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
@@ -57,6 +57,6 @@ contract BridgeableToken_SwapLzTokenToInnerToken_Integrations_Test is Integratio
         swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
         vm.startPrank(users.alice);
         vm.expectRevert(ErrorsLib.MintLimitExceeded.selector);
-        bBridgeableToken.swapLzTokenToInnerToken(swapAmount);
+        bBridgeableToken.swapLzTokenToPrincipalToken(swapAmount);
     }
 }

@@ -58,7 +58,7 @@ const deploy: DeployFunction = async (hre) => {
         args: [
             config.lzName,
             config.lzSymbol,
-            config.innerTokenAddress,
+            config.principalTokenAddress,
             endpointV2Deployment.address,
             deployer,
             configParams,

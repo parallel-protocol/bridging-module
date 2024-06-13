@@ -62,7 +62,7 @@ abstract contract Integrations_Test is Base_Test {
         BridgeableToken bridgeableTokenSending,
         address bridgeableTokenReceiver,
         uint32 eidReceiver,
-        bool isSendingInnerToken,
+        bool isSendingPrincipalToken,
         uint256 sendAmount,
         address msgSender
     ) internal {
@@ -73,7 +73,7 @@ abstract contract Integrations_Test is Base_Test {
             sendAmount,
             sendAmount,
             options,
-            abi.encode(isSendingInnerToken),
+            abi.encode(isSendingPrincipalToken),
             ""
         );
         MessagingFee memory fees = bridgeableTokenSending.quoteSend(sendParam, false);

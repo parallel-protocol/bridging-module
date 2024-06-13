@@ -7,7 +7,7 @@ abstract contract Utils is Test {
     uint256 internal constant BLOCK_TIME = 12;
 
     uint8 internal constant OFT_SHARED_DECIMALS = 6;
-    uint8 internal constant INNER_TOKEN_DECIMALS = 18;
+    uint8 internal constant PRINCIPAL_TOKEN_DECIMALS = 18;
 
     /// @notice bound the amount between min and max and return it as OFT compliant amount.
     /// @dev OFT standard has 6 sharedDecimals that is used to implicit cap on the amount of tokens.
@@ -44,9 +44,9 @@ abstract contract Utils is Test {
     function _serializeAmountForOFT(uint256 amount) internal pure returns (uint256) {
         return
             _scaleAmountToDecimals(
-                _scaleAmountToDecimals(amount, INNER_TOKEN_DECIMALS, OFT_SHARED_DECIMALS),
+                _scaleAmountToDecimals(amount, PRINCIPAL_TOKEN_DECIMALS, OFT_SHARED_DECIMALS),
                 OFT_SHARED_DECIMALS,
-                INNER_TOKEN_DECIMALS
+                PRINCIPAL_TOKEN_DECIMALS
             );
     }
 
