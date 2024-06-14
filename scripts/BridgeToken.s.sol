@@ -16,7 +16,8 @@ contract BridgeTokenScript is BaseScript {
 
     uint256 sendAmount = 10e18; // 10 tokens
     bool sendPrincipalToken = true;
-    uint32 eidReceiver = 40267; // amoy (check: https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts) for others networks
+    uint32 eidReceiver = 40267; // amoy (check:
+    // https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts) for others networks
 
     // Data are set to bridge 10 PAR from Arbitrum Sepolia to Amoy
     function run() external broadcast {
