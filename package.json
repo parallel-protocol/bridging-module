@@ -7,6 +7,7 @@
     "clean": "rm -rf artifacts cache out",
     "compile": "forge build && hardhat compile",
     "coverage": "forge coverage --report lcov && lcov --remove lcov.info -o lcov.info \"test/*\" \"node_modules/*\" && genhtml lcov.info -o coverage",
+    "deploy:bridgeableToken": "npx hardhat lz:deploy",
     "gas:report": "forge test --gas-report --nmt \"test_RevertWhen_\\w{1,}?\"",
     "lint": "$npm_execpath run lint:js && $npm_execpath run lint:sol",
     "lint:fix": "eslint --fix '**/*.{js,ts,json}' && prettier --write . && solhint 'contracts/**/*.sol' --fix --noPrompt",
@@ -14,6 +15,7 @@
     "lint:sol": "solhint 'contracts/**/*.sol'",
     "prepare": "husky",
     "script:bridgeToken": "cross-env && forge script scripts/BridgeToken.s.sol --rpc-url ${NETWORK} --broadcast",
+    "script:setPeer": "cross-env && forge script scripts/SetPeer.s.sol --rpc-url ${NETWORK} --broadcast",
     "test": "forge test -vvv --nmt \"^.*invariant.*$\"",
     "test:invariant": "forge test --mt \"^.*invariant.*$\""
   },
