@@ -42,6 +42,6 @@ depth = 256
 [fmt]
     bracket_spacing = true
     line_length = 120
-    quote_style = "single"
+    quote_style = "double"
     tab_width = 4
     wrap_comments = true
