@@ -9,7 +9,7 @@ This repository contains the source code for contracts and testing suites for al
 - [Deploy](./deploy) folder contains hardhat deployment scripts.
 - [Deployments](./deployments) folder contains info of contracts deployed per network.
 - [Docs](./docs) folder contains all documentation related to main contracts.
-- [Script](./scripts) folder contains Foundry scripts to interact with contracts.
+- [Script](./scripts) folder contains Foundry scripts to interact with onchain contracts.
 - [Test](./test) folder contains all tests related to the contracts with mocks and settings.
 - [Utils](./utils) folder contains helper functions.
 
@@ -30,7 +30,7 @@ Foundry is used for testing and scripting. To
 npm i
 ```
 
-### Fill the `.env` file with you data
+### Fill the `.env` file with your data
 
 The Foundry script relies solely on the PRIVATE_KEY. The MNEMONIC is used on the Hardhat side and will override the PRIVATE_KEY if it is defined.
 
