@@ -45,17 +45,16 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
 
     /// @notice The principalToken that can be minted and burned.
     IERC20 private immutable principalToken;
-    /// @notice Track the amount difference between minted and burned tokens.
-    /// @dev If amount < 0, it means that more tokens were burned than minted.
+    /// @notice Limit the bridge to burn more principal token than it has minted.
+    /// @dev If true, the bridge can't burn more tokens than it had minted (netMintedAmount > 0).
     bool private isIsolateMode;
+    /// @notice The fees recipient address.
+    address private feesRecipient;
     /// @notice The fees rate in basic point.
     uint16 private feesRate;
-    /// @notice The fees recipient address.
+    /// @notice Track the diff amount between principal tokens minted and burned.
+    /// @dev If amount < 0, it means that more tokens were burned than minted.
     int256 private netMintedAmount;
-    /// @notice Limit the bridge to mint/burn tokens.
-    /// @dev If true, the amount of minted tokens must be greater than the burned tokens.
-    /// if set to True when the `netMintedAmount` is negative, no more tokens can be bridge from this chain.
-    address private feesRecipient;
     /// @notice The daily limit of PrincipalToken allowed to bridge TO this chain.
     uint256 private mintDailyLimit;
     /// @notice The global limit of PrincipalToken allowed to bridge TO this chain.

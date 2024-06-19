@@ -11,7 +11,7 @@ abstract contract Utils is Test {
 
     /// @notice bound the amount between min and max and return it as OFT compliant amount.
     /// @dev OFT standard has 6 sharedDecimals that is used to implicit cap on the amount of tokens.
-    /// The OFT will then remove the dust from the amount that is sent and compare it to the expected amount recieved.
+    /// The OFT will then remove the dust from the amount that is sent and compare it to the expected amount received.
     /// If both amounts are not equal, the transaction will revert.
     /// cf. https://docs.layerzero.network/v2/developers/evm/oft/quickstart#token-transfer-precision
     function _boundBridgeAmount(uint256 amount, uint256 min, uint256 max) internal pure returns (uint256) {
