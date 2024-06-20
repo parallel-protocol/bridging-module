@@ -465,8 +465,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @param _amountBurned The amount of PrincipalTokens burned.
     function _updateStorageOnBurn(uint256 _amountBurned) private {
         uint256 day = block.timestamp / DAY_IN_SECONDS;
-        uint256 dailyUsage = burnDailyUsage[day];
-        if (dailyUsage + _amountBurned > burnDailyLimit) revert ErrorsLib.BurnDailyLimitReached();
+        if (burnDailyUsage[day] + _amountBurned > burnDailyLimit) revert ErrorsLib.BurnDailyLimitReached();
         burnDailyUsage[day] += _amountBurned;
         netMintedAmount -= int256(_amountBurned);
     }
