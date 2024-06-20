@@ -41,7 +41,7 @@ library EventsLib {
     /// @param isPrincipalTokenBurned the flag to indicate if the principal tokens are burned or OFTs.
     /// @param amountSentLD the amount sent in local decimals.
     /// @param amountReceive the amount expected to receive on the destination chain.
-    event OFTSent(
+    event BridgeableTokenSent(
         bytes32 indexed guid,
         uint32 dstEid,
         address indexed fromAddress,
@@ -57,7 +57,7 @@ library EventsLib {
     /// @param amountReceivedLD the amount of tokens received in local decimals.
     /// @param oftReceived the amount of OFT received.
     /// @param feeAmountLD the amount of the fees in local decimals.
-    event OFTReceived(
+    event BridgeableTokenReceived(
         bytes32 indexed guid,
         uint32 srcEid,
         address indexed toAddress,

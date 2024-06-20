@@ -142,7 +142,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         // @dev Formulate the OFT receipt.
         oftReceipt = OFTReceipt(amountSentLD, amountReceived);
 
-        emit EventsLib.OFTSent(
+        emit EventsLib.BridgeableTokenSent(
             msgReceipt.guid,
             _sendParam.dstEid,
             msg.sender,
@@ -362,7 +362,14 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
             feeApplicable
         );
 
-        emit EventsLib.OFTReceived(_guid, _origin.srcEid, toAddress, amountReceived, oftReceived, feeAmount);
+        emit EventsLib.BridgeableTokenReceived(
+            _guid,
+            _origin.srcEid,
+            toAddress,
+            amountReceived,
+            oftReceived,
+            feeAmount
+        );
     }
 
     //-------------------------------------------
