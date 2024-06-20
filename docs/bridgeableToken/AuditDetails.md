@@ -102,13 +102,13 @@ slither .
 We already know that Slither will report the following points:
 
 ```bash
-Reentrancy in BridgeableToken._lzReceive(Origin,bytes32,bytes,address,bytes) (contracts/tokens/BridgeableToken.sol#334-355):
+Reentrancy in BridgeableToken._lzReceive(Origin,bytes32,bytes,address,bytes) (contracts/tokens/BridgeableToken.sol#333-354):
         External calls:
-        - (amountReceived,oftReceived,feeAmount) = _credit(toAddress,_toLD(_message.amountSD()),_origin.srcEid,feeApplicable) (contracts/tokens/BridgeableToken.sol#351-352)
-                - IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient,feeAmount) (contracts/tokens/BridgeableToken.sol#428)
-                - IERC20MintableAndBurnable(address(principalToken)).mint(_to,amountReceived) (contracts/tokens/BridgeableToken.sol#431)
+        - (amountReceived,oftReceived,feeAmount) = _credit(toAddress,_toLD(_message.amountSD()),_origin.srcEid,feeApplicable) (contracts/tokens/BridgeableToken.sol#350-351)
+                - IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient,feeAmount) (contracts/tokens/BridgeableToken.sol#427)
+                - IERC20MintableAndBurnable(address(principalToken)).mint(_to,amountReceived) (contracts/tokens/BridgeableToken.sol#430)
         Event emitted after the call(s):
-        - EventsLib.OFTReceived(_guid,_origin.srcEid,toAddress,amountReceived,oftReceived,feeAmount) (contracts/tokens/BridgeableToken.sol#354)
+        - EventsLib.BridgeableTokenReceived(_guid,_origin.srcEid,toAddress,amountReceived,oftReceived,feeAmount) (contracts/tokens/BridgeableToken.sol#353)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
 
 PercentageMathLib.percentDiv(uint256,uint256) (contracts/libraries/PercentageMathLib.sol#32-47) is never used and should be removed
