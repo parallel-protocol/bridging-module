@@ -328,7 +328,8 @@ contract LayerZeroHelperOz5 is OptionsHelper, Test {
 
     /**
      * @dev dst UA receive/execute packets
-     * @dev will NOT work calling this directly with composer IF the composed payload is different from the lzReceive msg payload
+     * @dev will NOT work calling this directly with composer IF the composed payload is different from the lzReceive
+     * msg payload
      */
     function verifyPackets(uint32 _dstEid, bytes32 _dstAddress, uint256 _packetAmount, address _composer) public {
         require(endpoints[_dstEid] != address(0), "endpoint not yet registered");
