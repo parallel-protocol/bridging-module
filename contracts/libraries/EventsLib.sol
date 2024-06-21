@@ -37,14 +37,18 @@ library EventsLib {
     /// @notice Event emitted when tokens are sent from the src chain to the dst chain.
     /// @param guid the GUID of the OFT message.
     /// @param dstEid the Eid code of the destination chain.
-    /// @param fromAddress the Address of the token sender.
+    /// @param from the Address of the token sender.
+    /// @param to the Address that will receive the tokens.
+    /// @param nativeFeeAmount the amount of the fees in native token.
     /// @param isPrincipalTokenBurned the flag to indicate if the principal tokens are burned or OFTs.
     /// @param amountSentLD the amount sent in local decimals.
     /// @param amountReceive the amount expected to receive on the destination chain.
     event BridgeableTokenSent(
         bytes32 indexed guid,
         uint32 dstEid,
-        address indexed fromAddress,
+        address indexed from,
+        address indexed to,
+        uint256 nativeFeeAmount,
         bool isPrincipalTokenBurned,
         uint256 amountSentLD,
         uint256 amountReceive
@@ -53,14 +57,16 @@ library EventsLib {
     /// @notice Event emitted when tokens are received from the src chain to the dst chain.
     /// @param guid the GUID of the OFT message.
     /// @param srcEid the Eid code of the source chain.
-    /// @param toAddress the Address of the token receiver.
+    /// @param from the Address of the token sender.
+    /// @param to the Address of the token receiver.
     /// @param amountReceivedLD the amount of tokens received in local decimals.
     /// @param oftReceived the amount of OFT received.
     /// @param feeAmountLD the amount of the fees in local decimals.
     event BridgeableTokenReceived(
         bytes32 indexed guid,
         uint32 srcEid,
-        address indexed toAddress,
+        address indexed from,
+        address indexed to,
         uint256 amountReceivedLD,
         uint256 oftReceived,
         uint256 feeAmountLD
@@ -68,8 +74,8 @@ library EventsLib {
 
     /// @notice Event emitted when the caller swap OFT for principal tokens.
     /// @param caller Address of the caller.
-    /// @param amountToSwap Amount of OFT to swap.
+    /// @param amountSwapped Amount of OFT swapped.
     /// @param principalTokenAmountReceived Amount of principal tokens received.
     /// @param feeAmount Amount of fees in principal token.
-    event OFTSwapped(address caller, uint256 amountToSwap, uint256 principalTokenAmountReceived, uint256 feeAmount);
+    event OFTSwapped(address caller, uint256 amountSwapped, uint256 principalTokenAmountReceived, uint256 feeAmount);
 }

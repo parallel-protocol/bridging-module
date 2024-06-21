@@ -146,6 +146,8 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
             msgReceipt.guid,
             _sendParam.dstEid,
             msg.sender,
+            _sendParam.to.bytes32ToAddress(),
+            _fee.nativeFee,
             isPrincipalTokenBurned,
             amountSentLD,
             amountReceived
@@ -347,7 +349,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     ) internal virtual override nonReentrant {
         // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
         // Thus everything is bytes32() encoded in flight.
-        address toAddress = _message.sendTo().bytes32ToAddress();
+        address to = _message.sendTo().bytes32ToAddress();
 
         /// @dev Extract from message if the tokens burned from the original chain
         /// was the principalToken or the OFT token. If true, fees could be applied.
@@ -355,8 +357,8 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
 
         // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local
         // decimals
-        (uint256 amountReceived, uint256 oftReceived, uint256 feeAmount) = _credit(
-            toAddress,
+        (uint256 amountReceived, uint256 oftReceived, uint256 feesAmount) = _credit(
+            to,
             _toLD(_message.amountSD()),
             _origin.srcEid,
             feeApplicable
@@ -365,10 +367,11 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         emit EventsLib.BridgeableTokenReceived(
             _guid,
             _origin.srcEid,
-            toAddress,
+            _origin.sender.bytes32ToAddress(),
+            to,
             amountReceived,
             oftReceived,
-            feeAmount
+            feesAmount
         );
     }
 
