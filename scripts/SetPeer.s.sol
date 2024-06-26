@@ -16,13 +16,17 @@ contract SetPeerScript is BaseScript {
         uint32 eid;
     }
 
+    uint32 constant sepoliaEid = 40161;
+    uint32 constant arbitrumSepoliaEid = 40231;
+    uint32 constant amoyEid = 40267;
+
     function run() external broadcast {
-        BridgeableToken bridgeableToken = BridgeableToken(0x8932eAD0662b079e12D0ca5005f7123e0dF1b3fd);
+        BridgeableToken bridgeableToken = BridgeableToken(0x098e37a2Bfac675CF5A5C21d4f10e391D502D8b6);
 
         Peer[] memory peers = new Peer[](2);
 
-        peers[0] = Peer(0x1b03d006a47dF53B440B9a94aF88f38F63583342, 40161);
-        peers[1] = Peer(0x27B8907330ca7C130d4C125aDDc7588520E8208a, 40267);
+        peers[0] = Peer(0x65791b76D6129B3d299600384c3B210eAb695032, sepoliaEid);
+        peers[1] = Peer(0x7e6bc0Dc649f5E48842c881E97666C7E21d0a433, amoyEid);
 
         uint256 i = 0;
         for (; i < peers.length; ++i) {
