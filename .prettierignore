@@ -1,0 +1,11 @@
+artifacts/
+cache/
+dist/
+node_modules/
+
+*.log
+*ignore
+*.yaml
+*.lock
+package-lock.json
+deployments/

@@ -1,0 +1,11 @@
+{
+  "detectors_to_exclude": "assembly-usage, solc-version, conformance-to-solidity-naming-conventions",
+  "filter_paths": "(test|scripts|node_modules)",
+  "solc_remaps": [
+    "ds-test/=node_modules/@layerzerolabs/toolbox-foundry/lib/ds-test/",
+    "@layerzerolabs/=node_modules/@layerzerolabs/toolbox-foundry/lib/",
+    "@openzeppelin/=node_modules/@openzeppelin/contracts/",
+    "@forge-std/=node_modules/forge-std/src/",
+    "@layerzerolabs/=node_modules/@layerzerolabs/"
+  ]
+}
