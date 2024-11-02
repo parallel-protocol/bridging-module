@@ -1,7 +1,7 @@
 {
-  "lzName": "lz-Par",
-  "lzSymbol": "lzPar",
-  "principalTokenSymbol": "Par",
+  "lzName": "lz-PAR",
+  "lzSymbol": "lz-PAR",
+  "principalTokenSymbol": "PAR",
   "principalTokenAddress": "0xa04a24Ac56b878877b273A969370Bb4E6e0196e5",
   "delegate": "0x3676b6ed4ae0c9ce3E0034510719fdF5fd585d55",
   "feesRecipient": "0x3676b6ed4ae0c9ce3E0034510719fdF5fd585d55",

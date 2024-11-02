@@ -7,15 +7,14 @@ pragma solidity 0.8.22;
 library MathLib {
     /// @dev Returns the absolute value of `x`.
     function abs(int256 x) internal pure returns (uint256 z) {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             z := xor(sar(255, x), add(sar(255, x), x))
         }
     }
 
     /// @dev Returns the negative value of `x`.
     function neg(uint256 x) internal pure returns (int256 z) {
-        assembly {
+        assembly ("memory-safe") {
             z := sub(0, x)
         }
     }

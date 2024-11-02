@@ -47,7 +47,7 @@ Only the **Owner** may call pause
 
 ### Unpause
 
-An `unpause` function exists to
+An `unpause` function exists to unpaused the contract.
 
 Only the **Owner** may call unpause
 

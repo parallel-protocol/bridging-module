@@ -2,6 +2,28 @@
 
 **For testing purposes, Testnet principal token deployed is the production token with the minimal contract dependencies that are required to use it.**
 
+## Mainnet
+
+### Ethereum
+
+| Contract              | Explore                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| BridgeableToken PAR   | [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://etherscan.io/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F) |
+| BridgeableToken paUSD | [0xe0a86C3A7038E33Cb31531222Fae33a51B5022B2](https://etherscan.io/address/0xe0a86C3A7038E33Cb31531222Fae33a51B5022B2) |
+
+### Polygon
+
+| Contract              | Explore                                                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| BridgeableToken PAR   | [0x917b9D8E62739986EC182E0f988C7F938651aFD7](https://polygonscan.com/address/0x917b9D8E62739986EC182E0f988C7F938651aFD7) |
+| BridgeableToken paUSD | [0x7e6bc0Dc649f5E48842c881E97666C7E21d0a433](https://polygonscan.com/address/0x7e6bc0Dc649f5E48842c881E97666C7E21d0a433) |
+
+### Fantom
+
+| Contract            | Explore                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| BridgeableToken PAR | [0x9E77331A61e05737f41c379C5c7145Df802C64Ef](https://ftmscan.com/address/0x9E77331A61e05737f41c379C5c7145Df802C64Ef) |
+
 ## Testnet
 
 ### Sepolia

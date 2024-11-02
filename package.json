@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -rf artifacts cache out",
     "compile": "forge build && hardhat compile",
-    "coverage": "forge coverage --report lcov && lcov --remove lcov.info -o lcov.info \"test/*\" \"node_modules/*\" && genhtml lcov.info -o coverage",
+    "coverage": "forge coverage --ir-minimum --report lcov && lcov --remove lcov.info -o lcov.info \"test/*\" \"node_modules/*\" && genhtml lcov.info -o coverage",
     "deploy:bridgeableToken": "npx hardhat lz:deploy",
     "gas:report": "forge test --gas-report --nmt \"test_RevertWhen_\\w{1,}?\"",
     "lint": "$npm_execpath run lint:js && $npm_execpath run lint:sol",
@@ -17,7 +17,8 @@
     "script:bridgeToken": "cross-env && forge script scripts/BridgeToken.s.sol --rpc-url ${NETWORK} --broadcast",
     "script:setPeer": "cross-env && forge script scripts/SetPeer.s.sol --rpc-url ${NETWORK} --broadcast",
     "test": "forge test -vvv --nmt \"^.*invariant.*$\"",
-    "test:invariant": "forge test --mt \"^.*invariant.*$\""
+    "test:invariant": "forge test --mt \"^.*invariant.*$\"",
+    "verify": "npx hardhat verify --constructor-args utils/arguments.js"
   },
   "commitlint": {
     "extends": [
@@ -46,6 +47,7 @@
     "@layerzerolabs/toolbox-foundry": "~0.1.5",
     "@layerzerolabs/toolbox-hardhat": "~0.2.21",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
+    "@nomicfoundation/hardhat-verify": "^2.0.11",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@openzeppelin/contracts": "^5.0.1",
     "@openzeppelin/contracts-upgradeable": "^5.0.1",

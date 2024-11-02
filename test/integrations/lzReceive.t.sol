@@ -12,7 +12,6 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
     using OptionsBuilder for bytes;
     using PercentageMathLib for uint256;
     using OFTMsgCodec for bytes;
-    using PacketV1Codec for bytes;
 
     bool sendPrincipalToken = true;
     bool sendLzToken = false;

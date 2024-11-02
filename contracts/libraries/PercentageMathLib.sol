@@ -16,7 +16,7 @@ library PercentageMathLib {
     /// @return y The result of the multiplication.
     function percentMul(uint256 x, uint256 percentage) internal pure returns (uint256 y) {
         // to avoid overflow, value <= (type(uint256).max - HALF_PERCENTAGE_FACTOR) / percentage
-        assembly {
+        assembly ("memory-safe") {
             if mul(percentage, gt(x, div(MAX_UINT256_MINUS_HALF_PERCENTAGE_FACTOR, percentage))) {
                 revert(0, 0)
             }
@@ -35,7 +35,7 @@ library PercentageMathLib {
         // 2. Overflow if
         //        x * PERCENTAGE_FACTOR + percentage / 2 > type(uint256).max
         //    <=> x > (type(uint256).max - percentage / 2) / PERCENTAGE_FACTOR
-        assembly {
+        assembly ("memory-safe") {
             y := div(percentage, 2) // Temporary assignment to save gas.
 
             if iszero(mul(percentage, iszero(gt(x, div(sub(MAX_UINT256, y), PERCENTAGE_FACTOR))))) {

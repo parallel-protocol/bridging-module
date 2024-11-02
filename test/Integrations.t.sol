@@ -77,6 +77,7 @@ abstract contract Integrations_Test is Base_Test {
             ""
         );
         MessagingFee memory fees = bridgeableTokenSending.quoteSend(sendParam, false);
+        console2.log("fees", fees.nativeFee);
         bridgeableTokenSending.send{ value: fees.nativeFee }(sendParam, fees, payable(msgSender));
         verifyPackets(eidReceiver, bridgeableTokenReceiver);
     }

@@ -1,0 +1,14 @@
+{
+  "lzName": "lz-paUSD",
+  "lzSymbol": "lz-paUSD",
+  "principalTokenSymbol": "paUSD",
+  "principalTokenAddress": "0x571f54D23cDf2211C83E9A0CbD92AcA36c48Fa02",
+  "delegate": "0x3676b6ed4ae0c9ce3E0034510719fdF5fd585d55",
+  "feesRecipient": "0x25Fc7ffa8f9da3582a36633d04804F0004706F9b",
+  "mintDailyLimit": "15000000000000000000000",
+  "globalMintLimit": "100000000000000000000000",
+  "burnDailyLimit": "15000000000000000000000",
+  "globalBurnLimit": "100000000000000000000000",
+  "feesRate": 0,
+  "isIsolateMode": false
+}
