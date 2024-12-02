@@ -5,26 +5,26 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "test/Units.t.sol";
 
-contract BridgeableToken_SetGlobalMintLimit_Units_Test is Units_Test {
-    uint256 newGlobalMintLimit = 100_000_000e18;
+contract BridgeableToken_SetGlobalCreditLimit_Units_Test is Units_Test {
+    uint256 newGlobalCreditLimit = 100_000_000e18;
 
-    function test_SetGlobalMintLimit() external {
+    function test_SetGlobalCreditLimit() external {
         vm.startPrank(users.owner);
         vm.expectEmit(address(aBridgeableToken));
-        emit EventsLib.GlobalMintLimitSet(newGlobalMintLimit);
-        aBridgeableToken.setGlobalMintLimit(newGlobalMintLimit);
-        assertEq(aBridgeableToken.getGlobalMintLimit(), newGlobalMintLimit);
+        emit EventsLib.GlobalCreditLimitSet(newGlobalCreditLimit);
+        aBridgeableToken.setGlobalCreditLimit(newGlobalCreditLimit);
+        assertEq(aBridgeableToken.getGlobalCreditLimit(), newGlobalCreditLimit);
     }
 
     function test_RevertWhen_CallerNotOwner() external {
         vm.startPrank(users.hacker);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, users.hacker));
-        aBridgeableToken.setGlobalMintLimit(newGlobalMintLimit);
+        aBridgeableToken.setGlobalCreditLimit(newGlobalCreditLimit);
     }
 
     function test_RevertWhen_ValueOverflowMaxGlobalLimit() external {
         vm.startPrank(users.owner);
         vm.expectRevert(abi.encodeWithSelector(ErrorsLib.GlobalLimitOverFlow.selector));
-        aBridgeableToken.setGlobalMintLimit(uint256(type(int256).max) + 1);
+        aBridgeableToken.setGlobalCreditLimit(uint256(type(int256).max) + 1);
     }
 }

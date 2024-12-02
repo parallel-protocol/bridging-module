@@ -10,12 +10,13 @@ contract BridgeableToken_Constructor_Units_Test is Units_Test {
         assertEq(aBridgeableToken.getPrincipalToken(), address(aPar));
         assertFalse(aBridgeableToken.getIsIsolateMode());
         assertEq(aBridgeableToken.getFeesRate(), DEFAULT_FEE_RATE);
-        assertEq(aBridgeableToken.getMintDailyLimit(), DEFAULT_MINT_DAILY_LIMIT);
-        assertEq(aBridgeableToken.getGlobalMintLimit(), DEFAULT_GLOBAL_MINT_LIMIT);
-        assertEq(aBridgeableToken.getMaxMintableAmount(), DEFAULT_MINT_DAILY_LIMIT);
-        assertEq(aBridgeableToken.getBurnDailyLimit(), DEFAULT_BURN_DAILY_LIMIT);
-        assertEq(aBridgeableToken.getGlobalBurnLimit(), DEFAULT_GLOBAL_BURN_LIMIT);
-        assertEq(aBridgeableToken.getMaxBurnableAmount(), DEFAULT_BURN_DAILY_LIMIT);
+        assertEq(aBridgeableToken.getDailyCreditLimit(), DEFAULT_DAILY_CREDIT_LIMIT);
+        assertEq(aBridgeableToken.getGlobalCreditLimit(), DEFAULT_GLOBAL_CREDIT_LIMIT);
+        assertEq(aBridgeableToken.getDailyDebitLimit(), DEFAULT_DAILY_DEBIT_LIMIT);
+        assertEq(aBridgeableToken.getGlobalDebitLimit(), DEFAULT_GLOBAL_DEBIT_LIMIT);
+        assertEq(aBridgeableToken.getMaxDebitableAmount(), DEFAULT_DAILY_DEBIT_LIMIT);
+        assertEq(aBridgeableToken.getPrincipalTokenAmountMinted(), DEFAULT_PRINCIPAL_TOKEN_AMOUNT_MINTED);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), DEFAULT_NET_BRIDGED_AMOUNT);
     }
 
     function test_revertWhen_PrincipalTokenIsAddressZero() external {
@@ -32,10 +33,12 @@ contract BridgeableToken_Constructor_Units_Test is Units_Test {
 
     function test_revertWhen_FeesRecipientIsAddressZero() external {
         BridgeableToken.ConfigParams memory wrongConfigParams = BridgeableToken.ConfigParams({
-            mintDailyLimit: DEFAULT_MINT_DAILY_LIMIT,
-            globalMintLimit: DEFAULT_GLOBAL_MINT_LIMIT,
-            burnDailyLimit: DEFAULT_BURN_DAILY_LIMIT,
-            globalBurnLimit: DEFAULT_GLOBAL_BURN_LIMIT,
+            dailyCreditLimit: DEFAULT_DAILY_CREDIT_LIMIT,
+            globalCreditLimit: DEFAULT_GLOBAL_CREDIT_LIMIT,
+            dailyDebitLimit: DEFAULT_DAILY_DEBIT_LIMIT,
+            globalDebitLimit: DEFAULT_GLOBAL_DEBIT_LIMIT,
+            initialPrincipalTokenAmountMinted: DEFAULT_PRINCIPAL_TOKEN_AMOUNT_MINTED,
+            initialCreditDebitBalance: DEFAULT_NET_BRIDGED_AMOUNT,
             feesRecipient: address(0),
             feesRate: DEFAULT_FEE_RATE,
             isIsolateMode: false
@@ -53,10 +56,12 @@ contract BridgeableToken_Constructor_Units_Test is Units_Test {
 
     function test_revertWhen_FeesRateExceedMaxAllowed() external {
         BridgeableToken.ConfigParams memory wrongConfigParams = BridgeableToken.ConfigParams({
-            mintDailyLimit: DEFAULT_MINT_DAILY_LIMIT,
-            globalMintLimit: DEFAULT_GLOBAL_MINT_LIMIT,
-            burnDailyLimit: DEFAULT_BURN_DAILY_LIMIT,
-            globalBurnLimit: DEFAULT_GLOBAL_BURN_LIMIT,
+            dailyCreditLimit: DEFAULT_DAILY_CREDIT_LIMIT,
+            globalCreditLimit: DEFAULT_GLOBAL_CREDIT_LIMIT,
+            dailyDebitLimit: DEFAULT_DAILY_DEBIT_LIMIT,
+            globalDebitLimit: DEFAULT_GLOBAL_DEBIT_LIMIT,
+            initialPrincipalTokenAmountMinted: DEFAULT_PRINCIPAL_TOKEN_AMOUNT_MINTED,
+            initialCreditDebitBalance: DEFAULT_NET_BRIDGED_AMOUNT,
             feesRecipient: users.feesRecipient,
             feesRate: ContractConstantsLib.MAX_FEE + 1,
             isIsolateMode: false

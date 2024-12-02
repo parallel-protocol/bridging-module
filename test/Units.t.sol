@@ -11,10 +11,12 @@ abstract contract Units_Test is Base_Test {
         Base_Test.setUp();
 
         configParams = BridgeableToken.ConfigParams({
-            mintDailyLimit: DEFAULT_MINT_DAILY_LIMIT,
-            globalMintLimit: DEFAULT_GLOBAL_MINT_LIMIT,
-            burnDailyLimit: DEFAULT_BURN_DAILY_LIMIT,
-            globalBurnLimit: DEFAULT_GLOBAL_BURN_LIMIT,
+            dailyCreditLimit: DEFAULT_DAILY_CREDIT_LIMIT,
+            globalCreditLimit: DEFAULT_GLOBAL_CREDIT_LIMIT,
+            dailyDebitLimit: DEFAULT_DAILY_DEBIT_LIMIT,
+            globalDebitLimit: DEFAULT_GLOBAL_DEBIT_LIMIT,
+            initialPrincipalTokenAmountMinted: DEFAULT_PRINCIPAL_TOKEN_AMOUNT_MINTED,
+            initialCreditDebitBalance: DEFAULT_NET_BRIDGED_AMOUNT,
             feesRecipient: users.feesRecipient,
             feesRate: DEFAULT_FEE_RATE,
             isIsolateMode: false

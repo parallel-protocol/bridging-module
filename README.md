@@ -15,7 +15,7 @@ This repository contains the source code for contracts and testing suites for al
 
 ## Contracts
 
-The [`BridgeableToken.sol`](./contracts/tokens/BridgeableToken.sol) allow a principal token to be bridgeable by leveraging on [LayerZero's OFT standard](https://docs.layerzero.network/v2/home/protocol/contract-standards#oft) with custom mint/burn limit. See the [BridgeableToken documentation](./docs/bridgeableToken/README.md) for more details.
+The [`BridgeableToken.sol`](./contracts/tokens/BridgeableToken.sol) allow a principal token to be bridgeable by leveraging on [LayerZero's OFT standard](https://docs.layerzero.network/v2/home/protocol/contract-standards#oft) with custom credit/debit limits. See the [BridgeableToken documentation](./docs/bridgeableToken/README.md) for more details.
 
 ## Getting Started
 
@@ -27,7 +27,7 @@ Foundry is used for testing and scripting. To
 ### Install js dependencies
 
 ```bash
-npm i
+bun i
 ```
 
 ### Fill the `.env` file with your data
@@ -43,7 +43,7 @@ ALCHEMY_API_KEY=
 ### Compile contracts
 
 ```bash
-npm run compile
+bun run compile
 ```
 
 ### Run tests
@@ -53,13 +53,13 @@ There are 2 types of tests:
 - Classic tests (Units/Integrations) :
 
 ```bash
-npm run test
+bun run test
 ```
 
 - Invariant tests:
 
 ```bash
-npm run test:invariant
+bun run test:invariant
 ```
 
 You will find other useful commands in the [package.json](./package.json) file.

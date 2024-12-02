@@ -7,11 +7,12 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
     using OptionsBuilder for bytes;
     using PercentageMathLib for uint256;
 
+    uint256 PRINCIPAL_TOKEN_AMOUNT_MINTED = DEFAULT_DAILY_DEBIT_LIMIT / 2;
     bool sendPrincipalToken = true;
     bool sendLzToken = false;
 
-    function test_Send_PAR_Receive_PAR(uint256 amountToSend) external {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+    function test_Send_Lock_PAR_Receive_PAR(uint256 amountToSend) external {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
         uint256 expectedFeesAmount = amountToSend.percentMul(DEFAULT_FEE_RATE);
         uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
         vm.startPrank(users.alice);
@@ -19,25 +20,93 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
+        assertEq(aPar.balanceOf(address(aBridgeableToken)), amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
-        assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
-        assertEq(aBridgeableToken.getNetMintedAmount(), -int256(amountToSend));
-        assertEq(aBridgeableToken.getMaxBurnableAmount(), DEFAULT_BURN_DAILY_LIMIT - amountToSend);
+        assertEq(aBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(aBridgeableToken.getCurrentDailyDebitAmount(), amountToSend);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), -int256(amountToSend));
+        assertEq(aBridgeableToken.getMaxDebitableAmount(), DEFAULT_DAILY_DEBIT_LIMIT - amountToSend);
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + expectedReceivedAmount);
         assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
         assertEq(bBridgeableToken.balanceOf(users.alice), 0);
-        assertEq(bBridgeableToken.getCurrentMintDailyUsage(), amountToSend);
-        assertEq(bBridgeableToken.getCurrentBurnDailyUsage(), 0);
-        assertEq(bBridgeableToken.getNetMintedAmount(), int256(amountToSend));
-        assertEq(bBridgeableToken.getMaxMintableAmount(), DEFAULT_MINT_DAILY_LIMIT - amountToSend);
+        assertEq(bBridgeableToken.getPrincipalTokenAmountMinted(), amountToSend);
+        assertEq(bBridgeableToken.getCurrentDailyCreditAmount(), amountToSend);
+        assertEq(bBridgeableToken.getCurrentDailyDebitAmount(), 0);
+        assertEq(bBridgeableToken.getCreditDebitBalance(), int256(amountToSend));
+        assertEq(bBridgeableToken.getMaxCreditableAmount(), DEFAULT_DAILY_CREDIT_LIMIT - amountToSend);
+    }
+
+    function test_Send_Burn_PAR_Receive_PAR(
+        uint256 amountToSend
+    ) external deployBridgeableTokenToBurnOnSend(INITIAL_BALANCE) {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
+        uint256 expectedFeesAmount = amountToSend.percentMul(DEFAULT_FEE_RATE);
+        uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
+        uint256 prevTotalSupply = aPar.totalSupply();
+        vm.startPrank(users.alice);
+
+        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
+
+        assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
+        assertEq(aPar.balanceOf(address(aBridgeableToken)), 0);
+        assertEq(aPar.totalSupply(), prevTotalSupply - amountToSend);
+        assertEq(aBridgeableToken.balanceOf(users.alice), 0);
+        assertEq(aBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(aBridgeableToken.getCurrentDailyDebitAmount(), amountToSend);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), -int256(amountToSend));
+        assertEq(aBridgeableToken.getMaxDebitableAmount(), DEFAULT_DAILY_DEBIT_LIMIT - amountToSend);
+
+        assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + expectedReceivedAmount);
+        assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
+        assertEq(bBridgeableToken.balanceOf(users.alice), 0);
+        assertEq(bBridgeableToken.getPrincipalTokenAmountMinted(), amountToSend);
+        assertEq(bBridgeableToken.getCurrentDailyCreditAmount(), amountToSend);
+        assertEq(bBridgeableToken.getCurrentDailyDebitAmount(), 0);
+        assertEq(bBridgeableToken.getCreditDebitBalance(), int256(amountToSend));
+        assertEq(bBridgeableToken.getMaxCreditableAmount(), DEFAULT_DAILY_CREDIT_LIMIT - amountToSend);
+    }
+
+    function test_Send_BurnUntilPrincipalTokenAmountMintedIsZeroThanLockPAR_Receive_PAR(
+        uint256 amountToSend
+    ) external deployBridgeableTokenToBurnOnSend(PRINCIPAL_TOKEN_AMOUNT_MINTED) {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
+        uint256 expectedFeesAmount = amountToSend.percentMul(DEFAULT_FEE_RATE);
+        uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
+        uint256 expectedPrincipalTokenAmountLocked = amountToSend > PRINCIPAL_TOKEN_AMOUNT_MINTED
+            ? amountToSend - PRINCIPAL_TOKEN_AMOUNT_MINTED
+            : 0;
+        uint256 expectedPrincipalTokenAmountBurned = amountToSend > PRINCIPAL_TOKEN_AMOUNT_MINTED
+            ? PRINCIPAL_TOKEN_AMOUNT_MINTED
+            : amountToSend;
+        uint256 prevTotalSupply = aPar.totalSupply();
+        vm.startPrank(users.alice);
+
+        _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
+
+        assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
+        assertEq(aPar.balanceOf(address(aBridgeableToken)), expectedPrincipalTokenAmountLocked);
+        assertEq(aPar.totalSupply(), prevTotalSupply - expectedPrincipalTokenAmountBurned);
+        assertEq(aBridgeableToken.balanceOf(users.alice), 0);
+        assertEq(aBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(aBridgeableToken.getCurrentDailyDebitAmount(), amountToSend);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), -int256(amountToSend));
+        assertEq(aBridgeableToken.getMaxDebitableAmount(), DEFAULT_DAILY_DEBIT_LIMIT - amountToSend);
+
+        assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + expectedReceivedAmount);
+        assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
+        assertEq(bBridgeableToken.balanceOf(users.alice), 0);
+        assertEq(bBridgeableToken.getPrincipalTokenAmountMinted(), amountToSend);
+        assertEq(bBridgeableToken.getCurrentDailyCreditAmount(), amountToSend);
+        assertEq(bBridgeableToken.getCurrentDailyDebitAmount(), 0);
+        assertEq(bBridgeableToken.getCreditDebitBalance(), int256(amountToSend));
+        assertEq(bBridgeableToken.getMaxCreditableAmount(), DEFAULT_DAILY_CREDIT_LIMIT - amountToSend);
     }
 
     modifier getLzPar() {
         vm.startPrank(users.owner);
-        /// @dev By setting the mint daily limit to 0, we can only mint blz-PAR
-        bBridgeableToken.setMintDailyLimit(0);
+        /// @dev By setting the daily credit limit to 0, we can only mint bLz-PAR
+        bBridgeableToken.setDailyCreditLimit(0);
 
         /// @dev recieve bLz-PAR
         vm.startPrank(users.alice);
@@ -46,7 +115,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
             address(bBridgeableToken),
             bEid,
             sendPrincipalToken,
-            _serializeAmountForOFT(DEFAULT_BURN_DAILY_LIMIT),
+            DEFAULT_DAILY_DEBIT_LIMIT,
             users.alice
         );
         _;
@@ -54,7 +123,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
 
     function test_Send_LzPAR_Receive_PAR(uint256 amountToSend) external getLzPar {
         vm.startPrank(users.alice);
-        uint256 bLzParAmount = _serializeAmountForOFT(DEFAULT_BURN_DAILY_LIMIT);
+        uint256 bLzParAmount = _serializeAmountForOFT(DEFAULT_DAILY_DEBIT_LIMIT);
         uint256 aParAliceBalance = INITIAL_BALANCE - bLzParAmount;
         amountToSend = _boundBridgeAmount(amountToSend, 1e18, bLzParAmount);
 
@@ -68,78 +137,79 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         assertEq(aPar.balanceOf(users.feesRecipient), 0);
 
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
-        assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), bLzParAmount);
-        assertEq(aBridgeableToken.getCurrentMintDailyUsage(), amountToSend);
-        assertEq(aBridgeableToken.getNetMintedAmount(), int256(amountToSend) - int256(bLzParAmount));
+        assertEq(aBridgeableToken.getCurrentDailyDebitAmount(), bLzParAmount);
+        assertEq(aBridgeableToken.getCurrentDailyCreditAmount(), amountToSend);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), int256(amountToSend) - int256(bLzParAmount));
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
         assertEq(bBridgeableToken.balanceOf(users.alice), bLzParAmount - amountToSend);
-        assertEq(bBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(bBridgeableToken.getCurrentBurnDailyUsage(), 0);
-        assertEq(bBridgeableToken.getNetMintedAmount(), 0);
+        assertEq(bBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(bBridgeableToken.getCurrentDailyDebitAmount(), 0);
+        assertEq(bBridgeableToken.getCreditDebitBalance(), 0);
     }
 
-    modifier reachGlobalMintLimit() {
+    modifier reachGlobalCreditLimit() {
         vm.startPrank(users.owner);
-        /// @dev By setting the mint daily limit to 0, we direclty reach the global mint limit
-        bBridgeableToken.setGlobalMintLimit(0);
+        /// @dev By setting the credit daily limit to 0, we direclty reach the global credit limit
+        bBridgeableToken.setGlobalCreditLimit(0);
         _;
     }
 
-    function test_ReachGlobalMintLimitShouldReceiveLzPAR(uint256 amountToSend) external reachGlobalMintLimit {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+    function test_ReachGlobalCreditLimit_ShouldReceiveLzPAR(uint256 amountToSend) external reachGlobalCreditLimit {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
         vm.startPrank(users.alice);
         _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
-        assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
-        assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(aBridgeableToken.getNetMintedAmount(), -int256(amountToSend));
+        assertEq(aBridgeableToken.getCurrentDailyDebitAmount(), amountToSend);
+        assertEq(aBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), -int256(amountToSend));
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
         assertEq(bBridgeableToken.balanceOf(users.alice), amountToSend);
-        assertEq(bBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(bBridgeableToken.getCurrentBurnDailyUsage(), 0);
-        assertEq(bBridgeableToken.getNetMintedAmount(), 0);
+        assertEq(bBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(bBridgeableToken.getCurrentDailyDebitAmount(), 0);
+        assertEq(bBridgeableToken.getCreditDebitBalance(), 0);
     }
 
-    modifier reachMintDailyLimit() {
+    modifier reachDailyCreditLimit() {
         vm.startPrank(users.owner);
-        /// @dev By setting the mint daily limit to 0, we direclty reach the global mint limit
-        bBridgeableToken.setMintDailyLimit(0);
+        /// @dev By setting the daily credit limit to 0, we direclty reach the limit.
+        bBridgeableToken.setDailyCreditLimit(0);
         _;
     }
 
-    function test_ReachMintDailyLimitShouldReceiveLzPAR(uint256 amountToSend) external reachMintDailyLimit {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+    function test_ReachDailyCreditLimit_ShouldReceiveLzPAR(uint256 amountToSend) external reachDailyCreditLimit {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
         vm.startPrank(users.alice);
         _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         assertEq(aPar.balanceOf(users.alice), INITIAL_BALANCE - amountToSend);
         assertEq(aBridgeableToken.balanceOf(users.alice), 0);
-        assertEq(aBridgeableToken.getCurrentBurnDailyUsage(), amountToSend);
-        assertEq(aBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(aBridgeableToken.getNetMintedAmount(), -int256(amountToSend));
+        assertEq(aBridgeableToken.getCurrentDailyDebitAmount(), amountToSend);
+        assertEq(aBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(aBridgeableToken.getCreditDebitBalance(), -int256(amountToSend));
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
         assertEq(bBridgeableToken.balanceOf(users.alice), amountToSend);
-        assertEq(bBridgeableToken.getCurrentMintDailyUsage(), 0);
-        assertEq(bBridgeableToken.getCurrentBurnDailyUsage(), 0);
-        assertEq(bBridgeableToken.getNetMintedAmount(), 0);
+        assertEq(bBridgeableToken.getCurrentDailyCreditAmount(), 0);
+        assertEq(bBridgeableToken.getCurrentDailyDebitAmount(), 0);
+        assertEq(bBridgeableToken.getCreditDebitBalance(), 0);
     }
 
-    modifier reachBurnDailyLimit() {
+    modifier reachDailyDebitLimit() {
         vm.startPrank(users.owner);
-        aBridgeableToken.setBurnDailyLimit(0);
+        /// @dev By setting the daily debit limit to 0, we direclty reach the limit.
+        aBridgeableToken.setDailyDebitLimit(0);
         _;
     }
 
-    function test_RevertWhen_BurnDailyLimitReached(uint256 amountToSend) external reachBurnDailyLimit {
-        amountToSend = _boundBridgeAmount(amountToSend, DEFAULT_BURN_DAILY_LIMIT, uint256(type(int256).max));
+    function test_RevertWhen_DailyDebitLimitReached(uint256 amountToSend) external reachDailyDebitLimit {
+        amountToSend = _boundBridgeAmount(amountToSend, DEFAULT_DAILY_DEBIT_LIMIT, uint256(type(int256).max));
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(
@@ -154,18 +224,19 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
 
         MessagingFee memory fees = aBridgeableToken.quoteSend(sendParam, false);
         vm.startPrank(users.alice);
-        vm.expectRevert(ErrorsLib.BurnDailyLimitReached.selector);
+        vm.expectRevert(ErrorsLib.DailyDebitLimitReached.selector);
         aBridgeableToken.send{ value: fees.nativeFee }(sendParam, fees, payable(users.alice));
     }
 
-    modifier reachGlobalBurnLimit() {
+    modifier reachGlobalDebitLimit() {
         vm.startPrank(users.owner);
-        aBridgeableToken.setGlobalBurnLimit(0);
+        /// @dev By setting the global debit limit to 0, we direclty reach the limit.
+        aBridgeableToken.setGlobalDebitLimit(0);
         _;
     }
 
-    function test_RevertWhen_GlobalBurnLimitReached(uint256 amountToSend) external reachGlobalBurnLimit {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+    function test_RevertWhen_GlobalDebitLimitReached(uint256 amountToSend) external reachGlobalDebitLimit {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(
@@ -181,7 +252,7 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         MessagingFee memory fees = aBridgeableToken.quoteSend(sendParam, false);
 
         vm.startPrank(users.alice);
-        vm.expectRevert(ErrorsLib.GlobalBurnLimitReached.selector);
+        vm.expectRevert(ErrorsLib.GlobalDebitLimitReached.selector);
         aBridgeableToken.send{ value: fees.nativeFee }(sendParam, fees, payable(users.alice));
     }
 
@@ -191,8 +262,8 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         _;
     }
 
-    function test_RevertWhen_InIsolateModeNetMintedAmountBelowZero(uint256 amountToSend) external setIsolateMode {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+    function test_RevertWhen_InIsolateModeCreditDebitBalanceBelowZero(uint256 amountToSend) external setIsolateMode {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         SendParam memory sendParam = SendParam(
@@ -212,22 +283,22 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         aBridgeableToken.send{ value: fees.nativeFee }(sendParam, fees, payable(users.alice));
     }
 
-    modifier mintAndUpdateGlobalMintAmount(uint256 amountToSend) {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT / 10);
+    modifier sendAndUpdateGlobalCreditAmount(uint256 amountToSend) {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT / 10);
         uint256 expectedFeesAmount = amountToSend.percentMul(DEFAULT_FEE_RATE);
         uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
         vm.startPrank(users.alice);
         _sendToken(aBridgeableToken, address(bBridgeableToken), bEid, sendPrincipalToken, amountToSend, users.alice);
 
         vm.startPrank(users.owner);
-        bBridgeableToken.setGlobalMintLimit(expectedReceivedAmount / 10);
+        bBridgeableToken.setGlobalCreditLimit(expectedReceivedAmount / 10);
         _;
     }
 
-    function test_ReceivedOFT_When_GlobalMintAmountUpdatedBelowNetMintedAmount(
+    function test_ReceivedOFT_When_GlobalCreditAmountUpdatedBelowCreditDebitBalance(
         uint256 amountToSend
-    ) external mintAndUpdateGlobalMintAmount(amountToSend) {
-        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_BURN_DAILY_LIMIT / 10);
+    ) external sendAndUpdateGlobalCreditAmount(amountToSend) {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT / 10);
         uint256 bLzParAmountAlice = bBridgeableToken.balanceOf(users.alice);
         uint256 aParAmountAlice = aPar.balanceOf(users.alice);
         uint256 bParAmountAlice = bPar.balanceOf(users.alice);
@@ -271,5 +342,22 @@ contract BridgeableToken_Send_Integrations_Test is Integrations_Test {
         fees = aBridgeableToken.quoteSend(sendParam, false);
         vm.expectRevert(ErrorsLib.InvalidMsgLength.selector);
         aBridgeableToken.send{ value: fees.nativeFee }(sendParam, fees, payable(users.alice));
+    }
+
+    function test_RevertWhen_ToIsAddressZero() external {
+        vm.startPrank(users.alice);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        SendParam memory sendParam = SendParam(
+            bEid,
+            addressToBytes32(address(0)),
+            1e18,
+            1e18,
+            options,
+            abi.encode(true),
+            ""
+        );
+        MessagingFee memory fees = aBridgeableToken.quoteSend(sendParam, false);
+        vm.expectRevert(ErrorsLib.AddressZero.selector);
+        aBridgeableToken.send{ value: fees.nativeFee }(sendParam, fees, payable(msg.sender));
     }
 }

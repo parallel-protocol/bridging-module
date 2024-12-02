@@ -18,4 +18,11 @@ library MathLib {
             z := sub(0, x)
         }
     }
+
+    /// @dev Returns the minimum of `x` and `y`.
+    function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        assembly ("memory-safe") {
+            z := xor(x, mul(xor(x, y), lt(y, x)))
+        }
+    }
 }
