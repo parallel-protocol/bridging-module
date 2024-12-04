@@ -19,6 +19,7 @@ import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 import { EndpointId } from '@layerzerolabs/lz-definitions'
 
 import { getRpcURL } from './utils/getRpcURL'
+import { getVerifyConfig } from './utils/getVerifyConfig'
 
 // Set your preferred authentication method
 //
@@ -59,46 +60,39 @@ const config: HardhatUserConfig = {
         mainnet: {
             eid: EndpointId.ETHEREUM_V2_MAINNET,
             url: getRpcURL('mainnet'),
+            verify: getVerifyConfig('mainnet'),
             accounts,
         },
         sepolia: {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
             url: getRpcURL('sepolia'),
+            verify: getVerifyConfig('sepolia'),
             accounts,
         },
         polygon: {
             eid: EndpointId.POLYGON_V2_MAINNET,
             url: getRpcURL('polygon'),
+            verify: getVerifyConfig('polygon'),
             accounts,
         },
         amoy: {
             eid: EndpointId.AMOY_V2_TESTNET,
             url: getRpcURL('amoy'),
+            verify: getVerifyConfig('amoy'),
             accounts,
         },
-        arbSepolia: {
+        arbiSepolia: {
             eid: EndpointId.ARBSEP_V2_TESTNET,
-            url: getRpcURL('arbSepolia'),
+            url: getRpcURL('arbiSepolia'),
+            verify: getVerifyConfig('arbiSepolia'),
             accounts,
         },
         fantom: {
             eid: EndpointId.FANTOM_V2_MAINNET,
             url: getRpcURL('fantom'),
+            verify: getVerifyConfig('fantom'),
             accounts,
         },
-    },
-    etherscan: {
-        apiKey: {
-            mainnet: process.env.ETHERSCAN_API_KEY!,
-            opera: process.env.FTMSCAN_API_KEY!,
-            polygon: process.env.POLYSCAN_API_KEY!,
-            amoy: process.env.POLYSCAN_API_KEY!,
-            arbSepolia: process.env.ARBISCAN_API_KEY!,
-            sepolia: process.env.ETHERSCAN_API_KEY!,
-        },
-    },
-    sourcify: {
-        enabled: true,
     },
     namedAccounts: {
         deployer: {
