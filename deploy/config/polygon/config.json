@@ -5,10 +5,12 @@
   "principalTokenAddress": "0x8054d4D130C3A84852f379424Bcac75673a7486B",
   "delegate": "0x3676b6ed4ae0c9ce3E0034510719fdF5fd585d55",
   "feesRecipient": "0x2046c0416A558C40cb112E5ebB0Ca764c3C5c32a",
-  "mintDailyLimit": "15000000000000000000000",
-  "globalMintLimit": "100000000000000000000000",
-  "burnDailyLimit": "15000000000000000000000",
-  "globalBurnLimit": "100000000000000000000000",
+  "dailyCreditLimit": "15000000000000000000000",
+  "globalCreditLimit": "100000000000000000000000",
+  "dailyDebitLimit": "15000000000000000000000",
+  "globalDebitLimit": "100000000000000000000000",
+  "initialCreditDebitBalance": "0",
+  "initialPrincipalTokenAmountMinted": "0",
   "feesRate": 0,
   "isIsolateMode": false
 }

@@ -26,10 +26,12 @@ const deploy: DeployFunction = async (hre) => {
     )
 
     const configParams: BridgeableToken.ConfigParamsStruct = {
-        mintDailyLimit: config.mintDailyLimit,
-        globalMintLimit: config.globalBurnLimit,
-        burnDailyLimit: config.burnDailyLimit,
-        globalBurnLimit: config.globalBurnLimit,
+        dailyCreditLimit: config.dailyCreditLimit,
+        globalCreditLimit: config.globalCreditLimit,
+        dailyDebitLimit: config.dailyDebitLimit,
+        globalDebitLimit: config.globalDebitLimit,
+        initialPrincipalTokenAmountMinted: config.initialPrincipalTokenAmountMinted,
+        initialCreditDebitBalance: config.initialCreditDebitBalance,
         feesRecipient: config.feesRecipient,
         feesRate: config.feesRate,
         isIsolateMode: config.isIsolateMode,
