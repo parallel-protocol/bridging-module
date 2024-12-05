@@ -12,5 +12,5 @@
   "initialCreditDebitBalance": "0",
   "initialPrincipalTokenAmountMinted": "0",
   "feesRate": 0,
-  "isIsolateMode": false
+  "isIsolateMode": true
 }
