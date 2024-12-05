@@ -6,20 +6,18 @@
 import 'dotenv/config'
 
 import '@typechain/hardhat'
-// import '@nomicfoundation/hardhat-ethers'
 
 import 'hardhat-deploy'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
-import '@layerzerolabs/toolbox-hardhat'
 import '@nomicfoundation/hardhat-verify'
+import '@layerzerolabs/toolbox-hardhat'
 
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 
 import { EndpointId } from '@layerzerolabs/lz-definitions'
 
 import { getRpcURL } from './utils/getRpcURL'
-import { getVerifyConfig } from './utils/getVerifyConfig'
 
 // Set your preferred authentication method
 //
@@ -60,39 +58,50 @@ const config: HardhatUserConfig = {
         mainnet: {
             eid: EndpointId.ETHEREUM_V2_MAINNET,
             url: getRpcURL('mainnet'),
-            verify: getVerifyConfig('mainnet'),
             accounts,
         },
         sepolia: {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
             url: getRpcURL('sepolia'),
-            verify: getVerifyConfig('sepolia'),
             accounts,
         },
         polygon: {
             eid: EndpointId.POLYGON_V2_MAINNET,
             url: getRpcURL('polygon'),
-            verify: getVerifyConfig('polygon'),
             accounts,
         },
         amoy: {
             eid: EndpointId.AMOY_V2_TESTNET,
             url: getRpcURL('amoy'),
-            verify: getVerifyConfig('amoy'),
             accounts,
         },
         arbiSepolia: {
             eid: EndpointId.ARBSEP_V2_TESTNET,
             url: getRpcURL('arbiSepolia'),
-            verify: getVerifyConfig('arbiSepolia'),
             accounts,
         },
         fantom: {
             eid: EndpointId.FANTOM_V2_MAINNET,
             url: getRpcURL('fantom'),
-            verify: getVerifyConfig('fantom'),
             accounts,
         },
+        hardhat: {
+            // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
+            allowUnlimitedContractSize: true,
+        },
+    },
+    etherscan: {
+        apiKey: {
+            mainnet: process.env.MAINNET_ETHERSCAN_API_KEY!,
+            opera: process.env.FANTOM_ETHERSCAN_API_KEY!,
+            polygon: process.env.POLYGON_ETHERSCAN_API_KEY!,
+            polygonAmoy: process.env.POLYGON_ETHERSCAN_API_KEY!,
+            arbitrumSepolia: process.env.ARBITRUM_ETHERSCAN_API_KEY!,
+            sepolia: process.env.MAINNET_ETHERSCAN_API_KEY!,
+        },
+    },
+    sourcify: {
+        enabled: true,
     },
     namedAccounts: {
         deployer: {

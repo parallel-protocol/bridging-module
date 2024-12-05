@@ -5,7 +5,6 @@ import { type DeployFunction } from 'hardhat-deploy/types'
 
 import { BridgeableToken } from '../typechain-types/contracts/tokens/BridgeableToken'
 
-import { GAS } from './utils'
 import { BridgeableTokenConfig } from './utils/types'
 
 const contractName = 'BridgeableToken'
@@ -67,7 +66,6 @@ const deploy: DeployFunction = async (hre) => {
         ],
         log: true,
         skipIfAlreadyDeployed: false,
-        ...GAS,
     })
 
     console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${bridgeableToken.address}`)
