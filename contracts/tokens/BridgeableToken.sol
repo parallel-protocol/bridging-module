@@ -56,7 +56,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @notice The fees rate in basic point.
     uint16 private feesRate;
     /// @notice Track the difference between credits and debits.
-    /// @dev If amount < 0, it means credits exceed debits.
+    /// @dev If amount < 0, it means debits exceed credits.
     int256 private creditDebitBalance;
     /// @notice Track the amount of principal tokens minted.
     /// @dev if the contract doesn't have enough PrincipalToken locked to transfer, we will mint them.
@@ -545,7 +545,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     ) private view returns (uint256 principalTokenAmountToCredit) {
         if (creditDebitBalance >= int256(globalCreditLimit)) return 0;
         principalTokenAmountToCredit = int256(_amount) + creditDebitBalance > int256(globalCreditLimit)
-            ? globalCreditLimit - uint256(creditDebitBalance)
+            ? uint256(int256(globalCreditLimit) - creditDebitBalance)
             : _amount;
         uint256 dailyUsage = dailyCreditAmount[_getCurrentDay()];
         if (dailyUsage + principalTokenAmountToCredit > dailyCreditLimit) {
