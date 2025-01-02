@@ -104,13 +104,13 @@ contract BridgeableToken_SwapLzTokenToPrincipalToken_Integrations_Test is Integr
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
     }
 
-    function test_RevertWhen_SwapAmountExceedsCreditLimit(uint256 swapAmount) external {
+    function test_RevertWhen_SwapAmountCalculatedIsZero(uint256 swapAmount) external {
         vm.startPrank(users.owner);
         bBridgeableToken.setDailyCreditLimit(0);
 
         swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
         vm.startPrank(users.alice);
-        vm.expectRevert(ErrorsLib.CreditLimitExceeded.selector);
+        vm.expectRevert(ErrorsLib.NothingToSwap.selector);
         bBridgeableToken.swapLzTokenToPrincipalToken(users.alice, swapAmount);
     }
 

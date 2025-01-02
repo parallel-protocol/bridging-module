@@ -47,4 +47,7 @@ library ErrorsLib {
 
     /// @notice Thrown when the msg length is invalid.
     error InvalidMsgLength();
+
+    /// @notice Thrown when the amount of OFT token to swap in principalToken is 0.
+    error NothingToSwap();
 }

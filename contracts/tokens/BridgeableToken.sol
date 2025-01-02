@@ -183,7 +183,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
 
         uint256 principalTokenAmountToSend = _calculatePrincipalTokenAmountToCredit(_amount);
 
-        if (principalTokenAmountToSend != _amount) revert ErrorsLib.CreditLimitExceeded();
+        if (principalTokenAmountToSend == 0) revert ErrorsLib.NothingToSwap();
 
         /// @dev Update the daily usage and the creditDebitBalance.
         dailyCreditAmount[_getCurrentDay()] += principalTokenAmountToSend;
