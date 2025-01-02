@@ -131,6 +131,64 @@ This creates a scenario where users can bypass the fee mechanism of the bridge b
 
 This is a known issue, and we accept it because while users may skip the contract fees, they will still pay the LayerZero bridge fees twice, which could result in a higher cost than the fees of the bridgeable token.
 
+### Fees are charged on OFT token bridging if limits are reached
+
+When the credit limits are met, users get minted OFT tokens when
+bridging which can be swapped for principal tokens at a later stage.
+However, to allow unsatisfied users to roll back their bridging
+transaction, the protocol does not charge any fees if OFT tokens are
+being bridged for principal tokens. This way users can revert their
+transaction at no fee cost if they are minted OFT tokens.
+
+However, the issue is that this fee-less bridge rollback is not always
+possible. This happens when the credit limits are met on the source
+chain as well. Consider the following scenario:
+
+1. Alice wants to bridge principal tokens from chainA to chain B.
+   Alice calls send on chainA and her principal tokens are locked
+   in the bridge.
+2. In chainB, the mint limit has already been met. So Alice gets
+   minted OFT tokens instead.
+3. Alice is unhappy and wants to revert her transaction. She calls
+   send on chainB with isPrincipalTokenSent set to false.
+4. In chainA, the mint limit has already been met. Thus Alice gets
+   minted OFT tokens on chainA as well.
+
+In the scenario above, Alice is unable to roll back her bridging
+transaction for no fees. She can call swapLzTokenToPrincipalToken to
+swap the OFT tokens for principal tokens on chainA, but this will
+charge her fees.
+
+This issue may happen by chance but can also be triggered by a
+malicious user. The malicious user can frontrun the transaction and fill
+the limits in order for the user who will then receive OFT tokens which
+they have to pay a fee for if they want back the principal tokens.
+
+### Bridging will not be possible if all chains are set to isolateMode
+
+Due to how `isolateMode` works, if all chains are set to this mode and
+`_config.initialCreditDebitBalance` is also 0 on all chains, bridging will
+be impossible. We accept this issue because the bridgeable token is not
+meant to be used in this mode on all chains.
+
+### Centralization risk introduced by emergencyRescue function
+
+The bridge is meant to lock most principal tokens.
+This means the amount of tokens held by the contract will in most
+cases result in a large amount of tokens being stored on the bridge.
+The emergency withdrawal function allows the owner to withdraw the
+total amount without any restrictions.
+This makes the risk of private key compromise even more severe.
+Furthermore, when emergencyWithdraw is called, the tokens are sent
+out and are unable to unlock during credit transactions so the contract
+is forced to mint out tokens instead and raise the
+`principalTokenAmountMinted`. Thus the protocol effectively is indebted
+to the admin until they return the tokens only after which the
+`principalTokenAmountMinted` can return to 0 with debits.
+
+We accept this issue as the contract owner will be an AccessManager contract from OpenZeppelin standard.
+We had to use the `Ownable` contract from OpenZeppelin to comply with LayerZero's OFT contract.
+
 ## Audit amendments
 
 Here are the logic/code changes made since the last audit:
