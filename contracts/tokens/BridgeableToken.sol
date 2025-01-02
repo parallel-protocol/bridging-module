@@ -297,9 +297,10 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     //-------------------------------------------
 
     /// @notice Allow owner to rescue any locked tokens in the contract in case of an emergency.
-    /// @param _amount The amount of tokens to rescue.
-    function emergencyWithdraw(uint256 _amount) external onlyOwner whenPaused {
-        principalToken.safeTransfer(msg.sender, _amount);
+    /// @param _token The token address to withdraw
+    /// @param _amount The amount of tokens to withdraw.
+    function emergencyRescue(address _token, uint256 _amount) external onlyOwner whenPaused {
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
     /// @notice Toggle `isIsolateMode` to enable/disable the isolation mode.
