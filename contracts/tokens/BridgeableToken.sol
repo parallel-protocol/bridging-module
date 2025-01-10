@@ -176,31 +176,38 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @notice Allow user to swap OFT token to principalToken if the amount is within the mint limit.
     /// @dev when the user swap OFT token to principalToken, the OFT token will be burned and the principalToken will be
     /// transferred or minted to the user.
+    /// @param _to The address to credit the principalToken to.
     /// @param _amount The amount of OFT token to swap.
     function swapLzTokenToPrincipalToken(address _to, uint256 _amount) external nonReentrant whenNotPaused {
         if (_to == address(0)) revert ErrorsLib.AddressZero();
-        _burn(msg.sender, _amount);
 
-        uint256 principalTokenAmountToSend = _calculatePrincipalTokenAmountToCredit(_amount);
+        uint256 totalPrincipalTokenAmountToCredit = _calculatePrincipalTokenAmountToCredit(_amount);
+        if (totalPrincipalTokenAmountToCredit == 0) revert ErrorsLib.NothingToSwap();
 
-        if (principalTokenAmountToSend == 0) revert ErrorsLib.NothingToSwap();
+        _burn(msg.sender, totalPrincipalTokenAmountToCredit);
 
         /// @dev Update the daily usage and the creditDebitBalance.
-        dailyCreditAmount[_getCurrentDay()] += principalTokenAmountToSend;
-        creditDebitBalance += int256(principalTokenAmountToSend);
+        dailyCreditAmount[_getCurrentDay()] += totalPrincipalTokenAmountToCredit;
+        creditDebitBalance += int256(totalPrincipalTokenAmountToCredit);
 
         /// @dev Calculate the fees amount.
-        uint256 feeAmount = principalTokenAmountToSend.percentMul(feesRate);
-        principalTokenAmountToSend = principalTokenAmountToSend - feeAmount;
+        uint256 feeAmount = totalPrincipalTokenAmountToCredit.percentMul(feesRate);
+        uint256 principalTokenAmountCredited = totalPrincipalTokenAmountToCredit - feeAmount;
 
-        emit EventsLib.OFTSwapped(msg.sender, _to, _amount, principalTokenAmountToSend, feeAmount);
+        emit EventsLib.OFTSwapped(
+            msg.sender,
+            _to,
+            totalPrincipalTokenAmountToCredit,
+            principalTokenAmountCredited,
+            feeAmount
+        );
 
         /// @dev if the fees amount is greater than 0, transfer/mint the fees to the feesRecipient.
         if (feeAmount > 0) {
             _creditPrincipalToken(feesRecipient, feeAmount);
         }
         /// @dev Transfer/mint the principalToken to the user.
-        _creditPrincipalToken(_to, principalTokenAmountToSend);
+        _creditPrincipalToken(_to, principalTokenAmountCredited);
     }
 
     //-------------------------------------------
