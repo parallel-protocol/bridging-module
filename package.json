@@ -19,7 +19,7 @@
     "script:bridgeToken": "cross-env && forge script scripts/BridgeToken.s.sol --rpc-url ${NETWORK} --broadcast",
     "test": "forge test -vvv --nmt \"^.*invariant.*$\"",
     "test:invariant": "forge test --mt \"^.*invariant.*$\"",
-    "verify": "npx hardhat verify --constructor-args utils/arguments.js"
+    "verify": "npx hardhat etherscan-verify --sleep"
   },
   "commitlint": {
     "extends": [
