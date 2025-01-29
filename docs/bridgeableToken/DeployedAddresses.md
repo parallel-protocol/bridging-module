@@ -8,21 +8,21 @@
 
 | Contract              | Explore                                                                                                               |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| BridgeableToken PAR   | [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://etherscan.io/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F) |
+| BridgeableToken PAR   | [0x74e3f9D724Da6D7e4db8EcAb4f18e6ba44f60e30](https://etherscan.io/address/0x74e3f9D724Da6D7e4db8EcAb4f18e6ba44f60e30) |
 | BridgeableToken paUSD | [0xd4DEE6E089969600d3359CdbCd34E3111BC838eB](https://etherscan.io/address/0xd4DEE6E089969600d3359CdbCd34E3111BC838eB) |
 
 ### Polygon
 
 | Contract              | Explore                                                                                                                  |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| BridgeableToken PAR   | [0x917b9D8E62739986EC182E0f988C7F938651aFD7](https://polygonscan.com/address/0x917b9D8E62739986EC182E0f988C7F938651aFD7) |
+| BridgeableToken PAR   | [0xE462Df8d4Aa7Db3aeCfe810ec8D1fa4f716BC9a8](https://polygonscan.com/address/0xE462Df8d4Aa7Db3aeCfe810ec8D1fa4f716BC9a8) |
 | BridgeableToken paUSD | [0x4311321f144e2cf24df87deefe79E9C4E232273b](https://polygonscan.com/address/0x4311321f144e2cf24df87deefe79E9C4E232273b) |
 
 ### Fantom
 
 | Contract            | Explore                                                                                                              |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| BridgeableToken PAR | [0x9E77331A61e05737f41c379C5c7145Df802C64Ef](https://ftmscan.com/address/0x9E77331A61e05737f41c379C5c7145Df802C64Ef) |
+| BridgeableToken PAR | [0xA18Fc7615C12DfBC1Dfa0f884375aE58CB930BD3](https://ftmscan.com/address/0xA18Fc7615C12DfBC1Dfa0f884375aE58CB930BD3) |
 
 ## Testnet
 
