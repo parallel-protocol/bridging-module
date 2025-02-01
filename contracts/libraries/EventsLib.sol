@@ -90,13 +90,13 @@ library EventsLib {
     /// @param caller Address of the caller.
     /// @param to Address of the receiver.
     /// @param amountSwapped Amount of OFT swapped.
-    /// @param principalTokenAmountReceived Amount of principal tokens received.
+    /// @param principalTokenAmountCredited Amount of principal tokens credited.
     /// @param feeAmount Amount of fees in principal token.
     event OFTSwapped(
         address caller,
         address to,
         uint256 amountSwapped,
-        uint256 principalTokenAmountReceived,
+        uint256 principalTokenAmountCredited,
         uint256 feeAmount
     );
 

@@ -56,7 +56,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @notice The fees rate in basic point.
     uint16 private feesRate;
     /// @notice Track the difference between credits and debits.
-    /// @dev If amount < 0, it means credits exceed debits.
+    /// @dev If amount < 0, it means debits exceed credits.
     int256 private creditDebitBalance;
     /// @notice Track the amount of principal tokens minted.
     /// @dev if the contract doesn't have enough PrincipalToken locked to transfer, we will mint them.
@@ -176,31 +176,38 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @notice Allow user to swap OFT token to principalToken if the amount is within the mint limit.
     /// @dev when the user swap OFT token to principalToken, the OFT token will be burned and the principalToken will be
     /// transferred or minted to the user.
+    /// @param _to The address to credit the principalToken to.
     /// @param _amount The amount of OFT token to swap.
     function swapLzTokenToPrincipalToken(address _to, uint256 _amount) external nonReentrant whenNotPaused {
         if (_to == address(0)) revert ErrorsLib.AddressZero();
-        _burn(msg.sender, _amount);
 
-        uint256 principalTokenAmountToSend = _calculatePrincipalTokenAmountToCredit(_amount);
+        uint256 totalPrincipalTokenAmountToCredit = _calculatePrincipalTokenAmountToCredit(_amount);
+        if (totalPrincipalTokenAmountToCredit == 0) revert ErrorsLib.NothingToSwap();
 
-        if (principalTokenAmountToSend != _amount) revert ErrorsLib.CreditLimitExceeded();
+        _burn(msg.sender, totalPrincipalTokenAmountToCredit);
 
         /// @dev Update the daily usage and the creditDebitBalance.
-        dailyCreditAmount[_getCurrentDay()] += principalTokenAmountToSend;
-        creditDebitBalance += int256(principalTokenAmountToSend);
+        dailyCreditAmount[_getCurrentDay()] += totalPrincipalTokenAmountToCredit;
+        creditDebitBalance += int256(totalPrincipalTokenAmountToCredit);
 
         /// @dev Calculate the fees amount.
-        uint256 feeAmount = principalTokenAmountToSend.percentMul(feesRate);
-        principalTokenAmountToSend = principalTokenAmountToSend - feeAmount;
+        uint256 feeAmount = totalPrincipalTokenAmountToCredit.percentMul(feesRate);
+        uint256 principalTokenAmountCredited = totalPrincipalTokenAmountToCredit - feeAmount;
 
-        emit EventsLib.OFTSwapped(msg.sender, _to, _amount, principalTokenAmountToSend, feeAmount);
+        emit EventsLib.OFTSwapped(
+            msg.sender,
+            _to,
+            totalPrincipalTokenAmountToCredit,
+            principalTokenAmountCredited,
+            feeAmount
+        );
 
         /// @dev if the fees amount is greater than 0, transfer/mint the fees to the feesRecipient.
         if (feeAmount > 0) {
             _creditPrincipalToken(feesRecipient, feeAmount);
         }
         /// @dev Transfer/mint the principalToken to the user.
-        _creditPrincipalToken(_to, principalTokenAmountToSend);
+        _creditPrincipalToken(_to, principalTokenAmountCredited);
     }
 
     //-------------------------------------------
@@ -297,9 +304,10 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     //-------------------------------------------
 
     /// @notice Allow owner to rescue any locked tokens in the contract in case of an emergency.
-    /// @param _amount The amount of tokens to rescue.
-    function emergencyWithdraw(uint256 _amount) external onlyOwner whenPaused {
-        principalToken.safeTransfer(msg.sender, _amount);
+    /// @param _token The token address to withdraw
+    /// @param _amount The amount of tokens to withdraw.
+    function emergencyRescue(address _token, uint256 _amount) external onlyOwner whenPaused {
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
     /// @notice Toggle `isIsolateMode` to enable/disable the isolation mode.
@@ -545,7 +553,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     ) private view returns (uint256 principalTokenAmountToCredit) {
         if (creditDebitBalance >= int256(globalCreditLimit)) return 0;
         principalTokenAmountToCredit = int256(_amount) + creditDebitBalance > int256(globalCreditLimit)
-            ? globalCreditLimit - uint256(creditDebitBalance)
+            ? uint256(int256(globalCreditLimit) - creditDebitBalance)
             : _amount;
         uint256 dailyUsage = dailyCreditAmount[_getCurrentDay()];
         if (dailyUsage + principalTokenAmountToCredit > dailyCreditLimit) {

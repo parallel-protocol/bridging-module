@@ -104,13 +104,30 @@ contract BridgeableToken_SwapLzTokenToPrincipalToken_Integrations_Test is Integr
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
     }
 
-    function test_RevertWhen_SwapAmountExceedsCreditLimit(uint256 swapAmount) external {
+    function test_SwapLzTokenToPrincipalToken_LimitReducedAmountToSwap(uint256 swapAmount) external {
+        swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
+        uint256 totalExpectedAmountCredited = swapAmount / 2;
+        uint256 expectedFeesAmount = totalExpectedAmountCredited.percentMul(DEFAULT_FEE_RATE);
+        uint256 expectedAmountCredited = totalExpectedAmountCredited - expectedFeesAmount;
+        uint256 dailyCreditLimit = totalExpectedAmountCredited;
+
+        bBridgeableToken.setDailyCreditLimit(dailyCreditLimit);
+
+        vm.startPrank(users.alice);
+        bBridgeableToken.swapLzTokenToPrincipalToken(users.alice, swapAmount);
+
+        assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + expectedAmountCredited);
+        assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
+        assertEq(bBridgeableToken.balanceOf(users.alice), bLzParAmount - totalExpectedAmountCredited);
+    }
+
+    function test_RevertWhen_SwapAmountCalculatedIsZero(uint256 swapAmount) external {
         vm.startPrank(users.owner);
         bBridgeableToken.setDailyCreditLimit(0);
 
         swapAmount = _boundBridgeAmount(swapAmount, 1e18, bLzParAmount);
         vm.startPrank(users.alice);
-        vm.expectRevert(ErrorsLib.CreditLimitExceeded.selector);
+        vm.expectRevert(ErrorsLib.NothingToSwap.selector);
         bBridgeableToken.swapLzTokenToPrincipalToken(users.alice, swapAmount);
     }
 

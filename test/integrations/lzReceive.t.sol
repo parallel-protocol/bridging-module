@@ -127,6 +127,58 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
     }
 
+    modifier reachGlobalLimitWithNegativeCreditDebitBalance() {
+        vm.startPrank(users.owner);
+        /// @dev Set the global limit close to daily limit to simplify test
+        bBridgeableToken.setGlobalCreditLimit(100e18);
+
+        /// @dev Birdge to make creditDebitBalance Negative
+
+        vm.startPrank(users.alice);
+
+        _sendToken(bBridgeableToken, address(aBridgeableToken), aEid, sendPrincipalToken, 10e18, users.alice);
+
+        assertEq(bBridgeableToken.getCreditDebitBalance(), int256(-10e18));
+        _;
+    }
+
+    function test_NotRevertWhen_CreditDebitLimitNegativeAndGlobalCreditAmountIsExceededDuringTx()
+        external
+        reachGlobalLimitWithNegativeCreditDebitBalance
+    {
+        uint256 expectedPrincipalReceived = 110e18;
+        uint256 expectedOFTReceived = 1e18;
+        uint256 amountToCredit = expectedPrincipalReceived + expectedOFTReceived;
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        (uint256 gas, uint256 value) = OptionsHelper._parseExecutorLzReceiveOption(options);
+
+        SendParam memory sendParam = SendParam(
+            bEid,
+            addressToBytes32(users.bob),
+            amountToCredit,
+            amountToCredit,
+            options,
+            abi.encode(sendLzToken),
+            ""
+        );
+
+        Origin memory origin = Origin(aEid, addressToBytes32(address(aBridgeableToken)), 1);
+        (bytes memory message, ) = buildMessage(sendParam);
+
+        address endpoint = address(bBridgeableToken.endpoint());
+        vm.startPrank(endpoint);
+        bBridgeableToken.lzReceive{ value: value, gas: gas }(
+            origin,
+            guid,
+            message,
+            address(bBridgeableToken),
+            bytes("")
+        );
+
+        assertEq(bPar.balanceOf(users.bob), INITIAL_BALANCE + expectedPrincipalReceived);
+        assertEq(bBridgeableToken.balanceOf(users.bob), expectedOFTReceived);
+    }
+
     function buildMessage(SendParam memory _sendParam) internal view returns (bytes memory, bytes memory) {
         (bytes memory message, ) = OFTMsgCodec.encode(
             _sendParam.to,
