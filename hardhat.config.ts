@@ -6,13 +6,12 @@
 import 'dotenv/config'
 
 import '@typechain/hardhat'
-// import '@nomicfoundation/hardhat-ethers'
 
 import 'hardhat-deploy'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
-import '@layerzerolabs/toolbox-hardhat'
 import '@nomicfoundation/hardhat-verify'
+import '@layerzerolabs/toolbox-hardhat'
 
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 
@@ -76,9 +75,9 @@ const config: HardhatUserConfig = {
             url: getRpcURL('amoy'),
             accounts,
         },
-        arbSepolia: {
+        arbiSepolia: {
             eid: EndpointId.ARBSEP_V2_TESTNET,
-            url: getRpcURL('arbSepolia'),
+            url: getRpcURL('arbiSepolia'),
             accounts,
         },
         fantom: {
@@ -86,15 +85,19 @@ const config: HardhatUserConfig = {
             url: getRpcURL('fantom'),
             accounts,
         },
+        hardhat: {
+            // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
+            allowUnlimitedContractSize: true,
+        },
     },
     etherscan: {
         apiKey: {
-            mainnet: process.env.ETHERSCAN_API_KEY!,
-            opera: process.env.FTMSCAN_API_KEY!,
-            polygon: process.env.POLYSCAN_API_KEY!,
-            amoy: process.env.POLYSCAN_API_KEY!,
-            arbSepolia: process.env.ARBISCAN_API_KEY!,
-            sepolia: process.env.ETHERSCAN_API_KEY!,
+            mainnet: process.env.MAINNET_ETHERSCAN_API_KEY!,
+            opera: process.env.FANTOM_ETHERSCAN_API_KEY!,
+            polygon: process.env.POLYGON_ETHERSCAN_API_KEY!,
+            polygonAmoy: process.env.POLYGON_ETHERSCAN_API_KEY!,
+            arbitrumSepolia: process.env.ARBITRUM_ETHERSCAN_API_KEY!,
+            sepolia: process.env.MAINNET_ETHERSCAN_API_KEY!,
         },
     },
     sourcify: {

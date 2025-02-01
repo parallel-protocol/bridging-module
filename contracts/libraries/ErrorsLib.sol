@@ -10,10 +10,10 @@ library ErrorsLib {
     error AddressZero();
 
     /// @notice Thrown when the amount of token to bridge from the current chain exceed the daily limit.
-    error BurnDailyLimitReached();
+    error DailyDebitLimitReached();
 
     /// @notice Thrown when the amount of token to bridge from the current chain exceed the global limit allowed.
-    error GlobalBurnLimitReached();
+    error GlobalDebitLimitReached();
 
     /// @notice Thrown when the amount to transfer exceed to limit.
     error MaxAmountTransferReached();
@@ -39,8 +39,8 @@ library ErrorsLib {
     /// @notice Thrown when a token transferFrom returned false
     error TransferFromReturnedFalse();
 
-    /// @notice Thrown when the amount of OFT token to withdraw in principalToken exceeds the limit.
-    error MintLimitExceeded();
+    /// @notice Thrown when the amount of OFT token to swap in principalToken exceeds the limit.
+    error CreditLimitExceeded();
 
     /// @notice Thrown when the new globalLimit value exceed `MAX_GLOBAL_LIMIT`.
     error GlobalLimitOverFlow();

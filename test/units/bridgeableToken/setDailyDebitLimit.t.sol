@@ -5,20 +5,20 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "test/Units.t.sol";
 
-contract BridgeableToken_SetMintDailyLimit_Units_Test is Units_Test {
-    uint256 newMintDailyLimit = 100_000e18;
+contract BridgeableToken_SetDailyDebitLimit_Units_Test is Units_Test {
+    uint256 newDailyDebitLimit = 100_000e18;
 
-    function test_SetMintDailyLimit() external {
+    function test_SetDailyDebitLimit() external {
         vm.startPrank(users.owner);
         vm.expectEmit(address(aBridgeableToken));
-        emit EventsLib.MintableDailyLimitSet(newMintDailyLimit);
-        aBridgeableToken.setMintDailyLimit(newMintDailyLimit);
-        assertEq(aBridgeableToken.getMintDailyLimit(), newMintDailyLimit);
+        emit EventsLib.DailyDebitLimitSet(newDailyDebitLimit);
+        aBridgeableToken.setDailyDebitLimit(newDailyDebitLimit);
+        assertEq(aBridgeableToken.getDailyDebitLimit(), newDailyDebitLimit);
     }
 
     function test_RevertWhen_CallerNotOwner() external {
         vm.startPrank(users.hacker);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, users.hacker));
-        aBridgeableToken.setMintDailyLimit(newMintDailyLimit);
+        aBridgeableToken.setDailyDebitLimit(newDailyDebitLimit);
     }
 }

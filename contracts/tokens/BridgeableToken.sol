@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
@@ -14,7 +15,6 @@ import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OF
 import { IERC20MintableAndBurnable } from "../interfaces/IERC20MintableAndBurnable.sol";
 
 import "../libraries/ConstantsLib.sol";
-
 import { PercentageMathLib } from "../libraries/PercentageMathLib.sol";
 import { EventsLib } from "../libraries/EventsLib.sol";
 import { ErrorsLib } from "../libraries/ErrorsLib.sol";
@@ -25,15 +25,18 @@ import { MathLib } from "../libraries/MathLib.sol";
 /// @custom:contact security@cooperlabs.xyz
 /// @notice Contract that using OFT to bridge tokens between chains.
 contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
+    using SafeERC20 for IERC20;
     using PercentageMathLib for uint256;
     using OFTMsgCodec for bytes;
     using OFTMsgCodec for bytes32;
 
     struct ConfigParams {
-        uint256 mintDailyLimit;
-        uint256 globalMintLimit;
-        uint256 burnDailyLimit;
-        uint256 globalBurnLimit;
+        uint256 dailyCreditLimit;
+        uint256 globalCreditLimit;
+        uint256 dailyDebitLimit;
+        uint256 globalDebitLimit;
+        uint256 initialPrincipalTokenAmountMinted;
+        int256 initialCreditDebitBalance;
         address feesRecipient;
         uint16 feesRate;
         bool isIsolateMode;
@@ -45,28 +48,32 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
 
     /// @notice The principalToken that can be minted and burned.
     IERC20 private immutable principalToken;
-    /// @notice Limit the bridge to burn more principal token than it has minted.
-    /// @dev If true, the bridge can't burn more tokens than it had minted (netMintedAmount > 0).
+    /// @notice Limit the bridge to send more tokens than it had received.
+    /// @dev If true, the bridge can't send more tokens than it had received (creditDebitBalance > 0).
     bool private isIsolateMode;
     /// @notice The fees recipient address.
     address private feesRecipient;
     /// @notice The fees rate in basic point.
     uint16 private feesRate;
-    /// @notice Track the diff amount between principal tokens minted and burned.
-    /// @dev If amount < 0, it means that more tokens were burned than minted.
-    int256 private netMintedAmount;
+    /// @notice Track the difference between credits and debits.
+    /// @dev If amount < 0, it means credits exceed debits.
+    int256 private creditDebitBalance;
+    /// @notice Track the amount of principal tokens minted.
+    /// @dev if the contract doesn't have enough PrincipalToken locked to transfer, we will mint them.
+    /// @dev During the send(), if principalTokenAmountMinted > 0, PrincipalToken will be burned instead of locked.
+    uint256 private principalTokenAmountMinted;
     /// @notice The daily limit of PrincipalToken allowed to bridge TO this chain.
-    uint256 private mintDailyLimit;
+    uint256 private dailyCreditLimit;
     /// @notice The global limit of PrincipalToken allowed to bridge TO this chain.
-    uint256 private globalMintLimit;
+    uint256 private globalCreditLimit;
     /// @notice The daily limit of PrincipalToken allowed to bridge FROM this chain.
-    uint256 private burnDailyLimit;
+    uint256 private dailyDebitLimit;
     /// @notice The global limit of PrincipalToken allowed to bridge FROM this chain.
-    int256 private globalBurnLimit;
-    /// @notice Track the daily usage of PrincipalToken minted.
-    mapping(uint256 day => uint256 usage) private mintDailyUsage;
-    /// @notice Track the daily usage of PrincipalToken burned.
-    mapping(uint256 day => uint256 usage) private burnDailyUsage;
+    int256 private globalDebitLimit;
+    /// @notice Track the daily credit amount of PrincipalToken.
+    mapping(uint256 day => uint256 amount) private dailyCreditAmount;
+    /// @notice Track the daily debit amount of PrincipalToken.
+    mapping(uint256 day => uint256 amount) private dailyDebitAmount;
 
     //-------------------------------------------
     // Constructor
@@ -90,12 +97,19 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         if (_principalToken == address(0)) revert ErrorsLib.AddressZero();
         principalToken = IERC20(_principalToken);
         _setFeesRate(_config.feesRate);
-        _setMintDailyLimit(_config.mintDailyLimit);
-        _setGlobalMintLimit(_config.globalMintLimit);
-        _setBurnDailyLimit(_config.burnDailyLimit);
-        _setGlobalBurnLimit(_config.globalBurnLimit);
+        _setDailyCreditLimit(_config.dailyCreditLimit);
+        _setGlobalCreditLimit(_config.globalCreditLimit);
+        _setDailyDebitLimit(_config.dailyDebitLimit);
+        _setGlobalDebitLimit(_config.globalDebitLimit);
         _setIsolateMode(_config.isIsolateMode);
         _setFeesRecipient(_config.feesRecipient);
+        principalTokenAmountMinted = _config.initialPrincipalTokenAmountMinted;
+        creditDebitBalance = _config.initialCreditDebitBalance;
+
+        emit EventsLib.BridgeableTokenCreated(
+            _config.initialPrincipalTokenAmountMinted,
+            _config.initialCreditDebitBalance
+        );
     }
 
     //-------------------------------------------
@@ -128,11 +142,13 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt)
     {
         if (_sendParam.composeMsg.length != 32) revert ErrorsLib.InvalidMsgLength();
+        address to = _sendParam.to.bytes32ToAddress();
+        if (to == address(0)) revert ErrorsLib.AddressZero();
 
-        bool isPrincipalTokenBurned = abi.decode(_sendParam.composeMsg, (bool));
+        bool isPrincipalTokenSent = abi.decode(_sendParam.composeMsg, (bool));
 
         (uint256 amountSent, uint256 amountReceived) = _debit(
-            isPrincipalTokenBurned,
+            isPrincipalTokenSent,
             _sendParam.amountLD,
             _sendParam.minAmountLD,
             _sendParam.dstEid
@@ -149,9 +165,9 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
             msgReceipt.guid,
             _sendParam.dstEid,
             msg.sender,
-            _sendParam.to.bytes32ToAddress(),
+            to,
             _fee.nativeFee,
-            isPrincipalTokenBurned,
+            isPrincipalTokenSent,
             amountSent,
             amountReceived
         );
@@ -159,26 +175,32 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
 
     /// @notice Allow user to swap OFT token to principalToken if the amount is within the mint limit.
     /// @dev when the user swap OFT token to principalToken, the OFT token will be burned and the principalToken will be
-    /// minted.
+    /// transferred or minted to the user.
     /// @param _amount The amount of OFT token to swap.
-    function swapLzTokenToPrincipalToken(uint256 _amount) external nonReentrant whenNotPaused {
+    function swapLzTokenToPrincipalToken(address _to, uint256 _amount) external nonReentrant whenNotPaused {
+        if (_to == address(0)) revert ErrorsLib.AddressZero();
         _burn(msg.sender, _amount);
 
-        uint256 principalTokenAmountToMint = _calculatePrincipalTokenAmountToMint(_amount);
+        uint256 principalTokenAmountToSend = _calculatePrincipalTokenAmountToCredit(_amount);
 
-        if (principalTokenAmountToMint != _amount) revert ErrorsLib.MintLimitExceeded();
+        if (principalTokenAmountToSend != _amount) revert ErrorsLib.CreditLimitExceeded();
 
-        _updateStorageOnMint(principalTokenAmountToMint);
+        /// @dev Update the daily usage and the creditDebitBalance.
+        dailyCreditAmount[_getCurrentDay()] += principalTokenAmountToSend;
+        creditDebitBalance += int256(principalTokenAmountToSend);
 
-        uint256 feeAmount = principalTokenAmountToMint.percentMul(feesRate);
-        principalTokenAmountToMint = principalTokenAmountToMint - feeAmount;
+        /// @dev Calculate the fees amount.
+        uint256 feeAmount = principalTokenAmountToSend.percentMul(feesRate);
+        principalTokenAmountToSend = principalTokenAmountToSend - feeAmount;
 
-        emit EventsLib.OFTSwapped(msg.sender, _amount, principalTokenAmountToMint, feeAmount);
+        emit EventsLib.OFTSwapped(msg.sender, _to, _amount, principalTokenAmountToSend, feeAmount);
 
+        /// @dev if the fees amount is greater than 0, transfer/mint the fees to the feesRecipient.
         if (feeAmount > 0) {
-            IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient, feeAmount);
+            _creditPrincipalToken(feesRecipient, feeAmount);
         }
-        IERC20MintableAndBurnable(address(principalToken)).mint(msg.sender, principalTokenAmountToMint);
+        /// @dev Transfer/mint the principalToken to the user.
+        _creditPrincipalToken(_to, principalTokenAmountToSend);
     }
 
     //-------------------------------------------
@@ -190,24 +212,24 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         return address(principalToken);
     }
 
-    /// @notice The mintable daily limit for the token.
-    function getMintDailyLimit() external view returns (uint256) {
-        return mintDailyLimit;
+    /// @notice The credit daily limit for the token.
+    function getDailyCreditLimit() external view returns (uint256) {
+        return dailyCreditLimit;
     }
 
-    /// @notice The burnable daily limit for the token.
-    function getBurnDailyLimit() external view returns (uint256) {
-        return burnDailyLimit;
+    /// @notice The debit daily limit for the token.
+    function getDailyDebitLimit() external view returns (uint256) {
+        return dailyDebitLimit;
     }
 
-    /// @notice The global mint limit for the token.
-    function getGlobalMintLimit() external view returns (uint256) {
-        return globalMintLimit;
+    /// @notice The global credit limit for the token.
+    function getGlobalCreditLimit() external view returns (uint256) {
+        return globalCreditLimit;
     }
 
-    /// @notice The burnable daily limit for the token.
-    function getGlobalBurnLimit() external view returns (uint256) {
-        return uint256(MathLib.abs(globalBurnLimit));
+    /// @notice The global debit limit for the token.
+    function getGlobalDebitLimit() external view returns (uint256) {
+        return uint256(MathLib.abs(globalDebitLimit));
     }
 
     /// @notice Whether the `isIsolateMode` is enabled.
@@ -215,10 +237,15 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         return isIsolateMode;
     }
 
-    /// @notice Retrieves the minted amount.
-    /// @dev If amount < 0, it means that more tokens were burned than minted.
-    function getNetMintedAmount() external view returns (int256) {
-        return netMintedAmount;
+    /// @notice Retrieves the amount of principalToken bridged.
+    /// @dev If amount < 0, it means that more tokens were credit than debit.
+    function getCreditDebitBalance() external view returns (int256) {
+        return creditDebitBalance;
+    }
+
+    /// @notice Retrieves the amount of principalToken minted.
+    function getPrincipalTokenAmountMinted() external view returns (uint256) {
+        return principalTokenAmountMinted;
     }
 
     /// @notice The fees recipient address.
@@ -232,39 +259,35 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         return feesRate;
     }
 
-    /// @notice Retrieves the current daily usage of minted tokens.
-    function getCurrentMintDailyUsage() external view returns (uint256) {
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        return mintDailyUsage[day];
+    /// @notice Retrieves the current daily credit amount of PrincipalToken.
+    function getCurrentDailyCreditAmount() external view returns (uint256) {
+        return dailyCreditAmount[_getCurrentDay()];
     }
 
-    /// @notice Retrieves the current daily usage of burned tokens.
-    function getCurrentBurnDailyUsage() external view returns (uint256) {
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        return burnDailyUsage[day];
+    /// @notice Retrieves the current daily debit amount of PrincipalToken.
+    function getCurrentDailyDebitAmount() external view returns (uint256) {
+        return dailyDebitAmount[_getCurrentDay()];
     }
 
-    /// @notice Retrieves the MAX amount of PrincipalToken mintable regarding limits.
-    function getMaxMintableAmount() external view returns (uint256) {
-        if (netMintedAmount >= int256(globalMintLimit)) return 0;
-        uint256 max = uint256(int256(globalMintLimit) - netMintedAmount);
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        uint256 dailyUsage = mintDailyUsage[day];
-        if (dailyUsage + max > mintDailyLimit) {
-            max = mintDailyLimit > dailyUsage ? mintDailyLimit - dailyUsage : 0;
+    /// @notice Retrieves the MAX amount of PrincipalToken to be credit regarding limits.
+    function getMaxCreditableAmount() external view returns (uint256) {
+        if (creditDebitBalance >= int256(globalCreditLimit)) return 0;
+        uint256 max = uint256(int256(globalCreditLimit) - creditDebitBalance);
+        uint256 currentCreditAmount = dailyCreditAmount[_getCurrentDay()];
+        if (currentCreditAmount + max > dailyCreditLimit) {
+            max = dailyCreditLimit > currentCreditAmount ? dailyCreditLimit - currentCreditAmount : 0;
         }
         return max;
     }
 
-    /// @notice Retrieves the MAX amount of PrincipalToken burnable regarding limits.
-    function getMaxBurnableAmount() external view returns (uint256) {
-        if (isIsolateMode && netMintedAmount < 0) return 0;
-        if (netMintedAmount <= globalBurnLimit) return 0;
-        uint256 max = MathLib.abs(globalBurnLimit - netMintedAmount);
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        uint256 dailyUsage = burnDailyUsage[day];
-        if (dailyUsage + max > burnDailyLimit) {
-            max = burnDailyLimit > dailyUsage ? burnDailyLimit - dailyUsage : 0;
+    /// @notice Retrieves the MAX amount of PrincipalToken to be debit regarding limits.
+    function getMaxDebitableAmount() external view returns (uint256) {
+        if (isIsolateMode && creditDebitBalance < 0) return 0;
+        if (creditDebitBalance <= globalDebitLimit) return 0;
+        uint256 max = MathLib.abs(globalDebitLimit - creditDebitBalance);
+        uint256 currentDebitAmount = dailyDebitAmount[_getCurrentDay()];
+        if (currentDebitAmount + max > dailyDebitLimit) {
+            max = dailyDebitLimit > currentDebitAmount ? dailyDebitLimit - currentDebitAmount : 0;
         }
         return max;
     }
@@ -273,40 +296,46 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     // OnlyOwner functions
     //-------------------------------------------
 
+    /// @notice Allow owner to rescue any locked tokens in the contract in case of an emergency.
+    /// @param _amount The amount of tokens to rescue.
+    function emergencyWithdraw(uint256 _amount) external onlyOwner whenPaused {
+        principalToken.safeTransfer(msg.sender, _amount);
+    }
+
     /// @notice Toggle `isIsolateMode` to enable/disable the isolation mode.
     function toggleIsolateMode() external onlyOwner {
         _setIsolateMode(!isIsolateMode);
     }
 
-    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on principalToken mint.
+    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on principalToken credit.
     /// @dev The fees rate in basic point with a maximum of 10% (10_00 in bp)
     /// @param _newFeesRate The new fees rate in basic point.
     function setFeesRate(uint16 _newFeesRate) external onlyOwner {
         _setFeesRate(_newFeesRate);
     }
 
-    /// @notice Sets `_mintDailyLimit` as `mintDailyLimit` of daily amount of principalToken mintable.
-    /// @param _mintDailyLimit The daily limit of principalToken mintable.
-    function setMintDailyLimit(uint256 _mintDailyLimit) external onlyOwner {
-        _setMintDailyLimit(_mintDailyLimit);
+    /// @notice Sets `_dailyCreditLimit` as `dailyCreditLimit` of daily amount of principalToken to be credit.
+    /// @param _dailyCreditLimit The daily limit of principalToken to be credit.
+    function setDailyCreditLimit(uint256 _dailyCreditLimit) external onlyOwner {
+        _setDailyCreditLimit(_dailyCreditLimit);
     }
 
-    /// @notice Sets `_globalMintLimit` as `globalMintLimit` of max amount of principalToken mintable.
-    /// @param _globalMintLimit The max limit of principalToken mintable.
-    function setGlobalMintLimit(uint256 _globalMintLimit) external onlyOwner {
-        _setGlobalMintLimit(_globalMintLimit);
+    /// @notice Sets `_globalCreditLimit` as `globalCreditLimit` of max amount of principalToken to be credit.
+    /// @param _globalCreditLimit The max limit of principalToken to be credit.
+    function setGlobalCreditLimit(uint256 _globalCreditLimit) external onlyOwner {
+        _setGlobalCreditLimit(_globalCreditLimit);
     }
 
-    /// @notice Sets `_burnDailyLimit` as `burnDailyLimit` of daily amount of principalToken burnable.
-    /// @param _burnDailyLimit The daily limit of principalToken burnable.
-    function setBurnDailyLimit(uint256 _burnDailyLimit) external onlyOwner {
-        _setBurnDailyLimit(_burnDailyLimit);
+    /// @notice Sets `_dailyDebitLimit` as `dailyDebitLimit` of daily amount of principalToken to be debit.
+    /// @param _dailyDebitLimit The daily limit of principalToken to be debit.
+    function setDailyDebitLimit(uint256 _dailyDebitLimit) external onlyOwner {
+        _setDailyDebitLimit(_dailyDebitLimit);
     }
 
-    /// @notice Sets `_globalBurnLimit` as `globalBurnLimit` of max amount of principalToken burnable.
-    /// @param _globalBurnLimit The max limit of principalToken burnable.
-    function setGlobalBurnLimit(uint256 _globalBurnLimit) external onlyOwner {
-        _setGlobalBurnLimit(_globalBurnLimit);
+    /// @notice Sets `_globalDebitLimit` as `globalDebitLimit` of max amount of principalToken to be debit.
+    /// @param _globalDebitLimit The max limit of principalToken to be debit.
+    function setGlobalDebitLimit(uint256 _globalDebitLimit) external onlyOwner {
+        _setGlobalDebitLimit(_globalDebitLimit);
     }
 
     /// @notice Sets `_newFeesRecipient` as `feesRecipient` of the fees.
@@ -355,7 +384,7 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         /// was the principalToken or the OFT token. If true, fees could be applied.
         (, bool feeApplicable) = abi.decode(_message.composeMsg(), (bytes32, bool));
 
-        // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local
+        // @dev Credit the amount to the recipient and return the ACTUAL amount the recipient received in local
         // decimals
         (uint256 amountReceived, uint256 oftReceived, uint256 feesAmount) = _credit(
             to,
@@ -380,32 +409,55 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     //-------------------------------------------
 
     /// @dev Burns tokens from the sender's specified balance.
-    /// @param _isPrincipalTokenToBurn the flag to burn the principalToken or the OFT token from the caller.
+    /// @param _isPrincipalTokenToSend the flag to send the principalToken or the OFT token from the caller.
     /// @param _amountLD The amount of tokens to send in local decimals.
     /// @param _minAmountLD The minimum amount to send in local decimals.
     /// @param _dstEid The destination chain ID.
     /// @return amountSentLD The amount sent in local decimals.
-    /// @return amountReceived The amount received in local decimals on the remote.
+    /// @return amountReceivedLD The amount received on the remote in local decimals.
     function _debit(
-        bool _isPrincipalTokenToBurn,
+        bool _isPrincipalTokenToSend,
         uint256 _amountLD,
         uint256 _minAmountLD,
         uint32 _dstEid
-    ) private returns (uint256 amountSentLD, uint256 amountReceived) {
-        (amountSentLD, amountReceived) = _debitView(_amountLD, _minAmountLD, _dstEid);
+    ) private returns (uint256 amountSentLD, uint256 amountReceivedLD) {
+        (amountSentLD, amountReceivedLD) = _debitView(_amountLD, _minAmountLD, _dstEid);
 
-        if (_isPrincipalTokenToBurn) {
-            /// @dev Assert that the amount to burn DO NOT exceed the daily limit.
-            _updateStorageOnBurn(amountSentLD);
+        if (_isPrincipalTokenToSend) {
+            /// @dev Assert that the amount to send DO NOT exceed the daily limit.
+            uint256 day = _getCurrentDay();
+            if (dailyDebitAmount[day] + amountSentLD > dailyDebitLimit) {
+                revert ErrorsLib.DailyDebitLimitReached();
+            }
+
+            /// @dev Update the daily usage and the creditDebitBalance.
+            dailyDebitAmount[day] += amountSentLD;
+            creditDebitBalance -= int256(amountSentLD);
 
             if (isIsolateMode) {
-                /// @dev Assert that the final netMintedAmount is greater than 0.
-                if (netMintedAmount < 0) revert ErrorsLib.IsolateModeLimitReach();
-            } else {
-                /// @dev Assert that the final netMintedAmount is greater than the globalBurnLimit.
-                if (netMintedAmount < globalBurnLimit) revert ErrorsLib.GlobalBurnLimitReached();
+                /// @dev Assert that the final creditDebitBalance is greater than 0.
+                if (creditDebitBalance < 0) revert ErrorsLib.IsolateModeLimitReach();
             }
-            IERC20MintableAndBurnable(address(principalToken)).burn(msg.sender, amountSentLD);
+
+            /// @dev Assert that the final creditDebitBalance is greater than the globalDebitLimit.
+            if (creditDebitBalance < globalDebitLimit) revert ErrorsLib.GlobalDebitLimitReached();
+
+            uint256 amountToBurn;
+            uint256 amountToLock = amountSentLD;
+            /// @dev If the principalTokenAmountMinted is greater than 0, burn until principalTokenAmountMinted is 0.
+            if (principalTokenAmountMinted > 0) {
+                amountToBurn = MathLib.min(amountSentLD, principalTokenAmountMinted);
+                amountToLock -= amountToBurn;
+                /// @dev Update the principalTokenAmountMinted.
+                principalTokenAmountMinted -= amountToBurn;
+                /// @dev Burn the amount of principalToken.
+                IERC20MintableAndBurnable(address(principalToken)).burn(msg.sender, amountToBurn);
+            }
+            /// @dev If the amountToLock is greater than 0, lock the amount of principalToken.
+            if (amountToLock > 0) {
+                principalToken.safeTransferFrom(msg.sender, address(this), amountToLock);
+            }
+            emit EventsLib.PrincipalTokenDebited(msg.sender, amountSentLD, amountToBurn, amountToLock);
         } else {
             _burn(msg.sender, amountSentLD);
         }
@@ -417,13 +469,15 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
     /// @dev _srcEid The source chain ID.
     /// @param _isFeeApplicable The flag to apply fees or not.
     /// @return amountReceived The amount of tokens ACTUALLY received in local decimals.
+    /// @return oftReceived The amount of OFT tokens received in local decimals.
+    /// @return feeAmount The amount of fees token minted in local decimals.
     function _credit(
         address _to,
         uint256 _amountLD,
         uint32, //_srcEid,
         bool _isFeeApplicable
     ) private returns (uint256 amountReceived, uint256 oftReceived, uint256 feeAmount) {
-        (amountReceived, feeAmount) = _creditPrincipalToken(_to, _amountLD, _isFeeApplicable);
+        (amountReceived, feeAmount) = _handleCreditPrincipalToken(_to, _amountLD, _isFeeApplicable);
 
         oftReceived = _amountLD - amountReceived - feeAmount;
         /// If OftReceived > 0 we must be credit to the user OFT tokens to match the total amount he must be credited.
@@ -434,61 +488,75 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
 
     /// @notice Calculates and credit principal tokens to `_to` address and the `feesRecipient`.
     /// @param _to The address to credit the tokens to.
-    /// @param _amountLD The amount of token expected to be credited.
-    /// @return amountReceived The amount of principal token minted.
-    /// @return feeAmount The amount of fees token minted.
-    function _creditPrincipalToken(
+    /// @param _amountLD The amount of token expected to be credited in local decimals.
+    /// @return amountReceived The amount of principal token received in local decimals.
+    /// @return feeAmount The amount of fees token minted in local decimals.
+    function _handleCreditPrincipalToken(
         address _to,
         uint256 _amountLD,
         bool _isFeeApplicable
     ) private returns (uint256 amountReceived, uint256 feeAmount) {
-        amountReceived = _calculatePrincipalTokenAmountToMint(_amountLD);
+        amountReceived = _calculatePrincipalTokenAmountToCredit(_amountLD);
+
         if (amountReceived > 0) {
-            _updateStorageOnMint(amountReceived);
+            dailyCreditAmount[_getCurrentDay()] += amountReceived;
+            creditDebitBalance += int256(amountReceived);
             if (_isFeeApplicable) {
                 if (feesRate > 0) {
                     feeAmount = amountReceived.percentMul(feesRate);
                     amountReceived -= feeAmount;
-                    IERC20MintableAndBurnable(address(principalToken)).mint(feesRecipient, feeAmount);
+                    _creditPrincipalToken(feesRecipient, feeAmount);
                 }
             }
-            IERC20MintableAndBurnable(address(principalToken)).mint(_to, amountReceived);
+            _creditPrincipalToken(_to, amountReceived);
         }
     }
 
-    /// @notice Updates the storage when minting new PrincipalTokens.
-    /// @param _amountMinted The amount of PrincipalTokens minted.
-    function _updateStorageOnMint(uint256 _amountMinted) private {
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        mintDailyUsage[day] += _amountMinted;
-        netMintedAmount += int256(_amountMinted);
-    }
-
-    /// @notice Updates the storage when burning PrincipalTokens.
-    /// @param _amountBurned The amount of PrincipalTokens burned.
-    function _updateStorageOnBurn(uint256 _amountBurned) private {
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        if (burnDailyUsage[day] + _amountBurned > burnDailyLimit) revert ErrorsLib.BurnDailyLimitReached();
-        burnDailyUsage[day] += _amountBurned;
-        netMintedAmount -= int256(_amountBurned);
-    }
-
-    /// @notice Calculates the amount of principalToken to mint.
-    /// @dev The amount of principalToken that can be minted regarding the limits.
-    /// @param _amountLD The amount of token expected to be minted.
-    /// @return principalTokenAmountToMint The total amount of principalToken to mint.
-    function _calculatePrincipalTokenAmountToMint(
-        uint256 _amountLD
-    ) private view returns (uint256 principalTokenAmountToMint) {
-        if (netMintedAmount >= int256(globalMintLimit)) return 0;
-        principalTokenAmountToMint = int256(_amountLD) + netMintedAmount > int256(globalMintLimit)
-            ? globalMintLimit - uint256(netMintedAmount)
-            : _amountLD;
-        uint256 day = block.timestamp / DAY_IN_SECONDS;
-        uint256 dailyUsage = mintDailyUsage[day];
-        if (dailyUsage + principalTokenAmountToMint > mintDailyLimit) {
-            principalTokenAmountToMint = mintDailyLimit > dailyUsage ? mintDailyLimit - dailyUsage : 0;
+    /// @notice Credits principal tokens to `_to` address.
+    /// @dev In prioritary, the contract will transfer's principalToken from its balance to the `_to` address.
+    /// If the contract doesn't have enough balance, it will mint the required amount to the `_to` address.
+    /// and update the principalTokenAmountMinted.
+    /// @param _to The address to credit the tokens to.
+    /// @param _amount The amount of tokens to credit.
+    /// @return amountSent The amount of principal token sent.
+    /// @return amountMinted The amount of principal token minted.
+    function _creditPrincipalToken(
+        address _to,
+        uint256 _amount
+    ) private returns (uint256 amountSent, uint256 amountMinted) {
+        uint256 contractBalance = principalToken.balanceOf(address(this));
+        amountSent = (contractBalance > _amount) ? _amount : contractBalance;
+        amountMinted = _amount - amountSent;
+        if (amountMinted > 0) {
+            principalTokenAmountMinted += amountMinted;
+            IERC20MintableAndBurnable(address(principalToken)).mint(_to, amountMinted);
         }
+        if (amountSent > 0) {
+            principalToken.safeTransfer(_to, amountSent);
+        }
+        emit EventsLib.PrincipalTokenCredited(_to, _amount, amountSent, amountMinted);
+    }
+
+    /// @notice Calculates the amount of principalToken that can be credit regarding the limits.
+    /// @param _amount The amount of token expected to be credit.
+    /// @return principalTokenAmountToCredit The total amount of principalToken to credit.
+    function _calculatePrincipalTokenAmountToCredit(
+        uint256 _amount
+    ) private view returns (uint256 principalTokenAmountToCredit) {
+        if (creditDebitBalance >= int256(globalCreditLimit)) return 0;
+        principalTokenAmountToCredit = int256(_amount) + creditDebitBalance > int256(globalCreditLimit)
+            ? globalCreditLimit - uint256(creditDebitBalance)
+            : _amount;
+        uint256 dailyUsage = dailyCreditAmount[_getCurrentDay()];
+        if (dailyUsage + principalTokenAmountToCredit > dailyCreditLimit) {
+            principalTokenAmountToCredit = dailyCreditLimit > dailyUsage ? dailyCreditLimit - dailyUsage : 0;
+        }
+    }
+
+    /// @notice Retrieves the current day.
+    /// @return The current day.
+    function _getCurrentDay() private view returns (uint256) {
+        return block.timestamp / DAY_IN_SECONDS;
     }
 
     /// @notice Sets the `isIsolateMode` flag.
@@ -498,41 +566,45 @@ contract BridgeableToken is OFT, ReentrancyGuard, Pausable {
         emit EventsLib.IsolateModeToggled(_isIsolateMode);
     }
 
-    /// @notice Sets `_newMintDailyLimit` as `mintDailyLimit` of daily amount of principalToken mintable.
-    /// @param _newMintDailyLimit The daily limit of principalToken mintable.
-    function _setMintDailyLimit(uint256 _newMintDailyLimit) private {
-        mintDailyLimit = _newMintDailyLimit;
-        emit EventsLib.MintableDailyLimitSet(_newMintDailyLimit);
+    /// @notice Sets `_newDailyCreditLimit` as `dailyCreditLimit` of daily amount of principalToken that can be
+    /// credit.
+    /// @param _newDailyCreditLimit The daily limit of principalToken that can be credit.
+    function _setDailyCreditLimit(uint256 _newDailyCreditLimit) private {
+        dailyCreditLimit = _newDailyCreditLimit;
+        emit EventsLib.DailyCreditLimitSet(_newDailyCreditLimit);
     }
 
-    /// @notice Sets `_newGlobalMintLimit` as `globalMintLimit` of max amount of principalToken mintable.
-    /// @param _newGlobalMintLimit The max limit of principalToken mintable.
-    function _setGlobalMintLimit(uint256 _newGlobalMintLimit) private {
-        if (_newGlobalMintLimit > MAX_GLOBAL_LIMIT) {
+    /// @notice Sets `_newGlobalCreditLimit` as `globalCreditLimit` of max amount of principalToken that can be
+    /// credit.
+    /// @param _newGlobalCreditLimit The max limit of principalToken that can be credit.
+    function _setGlobalCreditLimit(uint256 _newGlobalCreditLimit) private {
+        if (_newGlobalCreditLimit > MAX_GLOBAL_LIMIT) {
             revert ErrorsLib.GlobalLimitOverFlow();
         }
-        globalMintLimit = _newGlobalMintLimit;
-        emit EventsLib.GlobalMintLimitSet(_newGlobalMintLimit);
+        globalCreditLimit = _newGlobalCreditLimit;
+        emit EventsLib.GlobalCreditLimitSet(_newGlobalCreditLimit);
     }
 
-    /// @notice Sets `_newBurnDailyLimit` as `burnDailyLimit` of daily amount of principalToken burnable.
-    /// @param _newBurnDailyLimit The daily limit of principalToken burnable.
-    function _setBurnDailyLimit(uint256 _newBurnDailyLimit) private {
-        burnDailyLimit = _newBurnDailyLimit;
-        emit EventsLib.BurnableDailyLimitSet(_newBurnDailyLimit);
+    /// @notice Sets `_newDailyDebitLimit` as `dailyDebitLimit` of daily amount of principalToken that can be
+    /// debit.
+    /// @param _newDailyDebitLimit The daily limit of principalToken that can be debit.
+    function _setDailyDebitLimit(uint256 _newDailyDebitLimit) private {
+        dailyDebitLimit = _newDailyDebitLimit;
+        emit EventsLib.DailyDebitLimitSet(_newDailyDebitLimit);
     }
 
-    /// @notice Sets `_newBurnDailyLimit` as `globalBurnLimit` of max amount of principalToken burnable.
-    /// @param _newGlobalBurnLimit The max limit of principalToken burnable.
-    function _setGlobalBurnLimit(uint256 _newGlobalBurnLimit) private {
-        if (_newGlobalBurnLimit > MAX_GLOBAL_LIMIT) {
+    /// @notice Sets `_newGlobalDebitLimit` as `globalDebitLimit` of max amount of principalToken that can be
+    /// debit.
+    /// @param _newGlobalDebitLimit The max limit of principalToken that can be debit.
+    function _setGlobalDebitLimit(uint256 _newGlobalDebitLimit) private {
+        if (_newGlobalDebitLimit > MAX_GLOBAL_LIMIT) {
             revert ErrorsLib.GlobalLimitOverFlow();
         }
-        globalBurnLimit = MathLib.neg(_newGlobalBurnLimit);
-        emit EventsLib.GlobalBurnLimitSet(_newGlobalBurnLimit);
+        globalDebitLimit = MathLib.neg(_newGlobalDebitLimit);
+        emit EventsLib.GlobalDebitLimitSet(_newGlobalDebitLimit);
     }
 
-    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on principalToken mint.
+    /// @notice Sets `_newFeesRate` as `feesRate` of the fees applied on principalToken to be credit.
     /// @param _newFeesRate The new fees rate in basic point.
     function _setFeesRate(uint16 _newFeesRate) private {
         if (_newFeesRate > MAX_FEE) revert ErrorsLib.MaxFeesRateExceeded();

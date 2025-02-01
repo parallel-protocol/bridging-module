@@ -18,10 +18,10 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
 
     bytes32 guid = hex"0000000000000000000000000000000000000000000000000000000000000001";
 
-    function test_LzReceive_PAR_From_PrincipalToken_Burned(uint256 amountToMint) external {
-        amountToMint = _boundBridgeAmount(amountToMint, 1e18, DEFAULT_MINT_DAILY_LIMIT);
-        uint256 expectedFeesAmount = amountToMint.percentMul(DEFAULT_FEE_RATE);
-        uint256 expectedReceivedAmount = amountToMint - expectedFeesAmount;
+    function test_LzReceive_PAR_From_PrincipalToken_Sent(uint256 amountToSend) external {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_CREDIT_LIMIT);
+        uint256 expectedFeesAmount = amountToSend.percentMul(DEFAULT_FEE_RATE);
+        uint256 expectedReceivedAmount = amountToSend - expectedFeesAmount;
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         (uint256 gas, uint256 value) = OptionsHelper._parseExecutorLzReceiveOption(options);
@@ -29,8 +29,8 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
         SendParam memory sendParam = SendParam(
             bEid,
             addressToBytes32(users.alice),
-            amountToMint,
-            amountToMint,
+            amountToSend,
+            amountToSend,
             options,
             abi.encode(sendPrincipalToken),
             ""
@@ -53,8 +53,8 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
         assertEq(bPar.balanceOf(users.feesRecipient), expectedFeesAmount);
     }
 
-    function test_LzReceive_PAR_From_OFT_Burned(uint256 amountToMint) external {
-        amountToMint = _boundBridgeAmount(amountToMint, 1e18, DEFAULT_MINT_DAILY_LIMIT);
+    function test_LzReceive_PAR_From_OFT_Sent(uint256 amountToSend) external {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_CREDIT_LIMIT);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         (uint256 gas, uint256 value) = OptionsHelper._parseExecutorLzReceiveOption(options);
@@ -62,8 +62,8 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
         SendParam memory sendParam = SendParam(
             bEid,
             addressToBytes32(users.alice),
-            amountToMint,
-            amountToMint,
+            amountToSend,
+            amountToSend,
             options,
             abi.encode(sendLzToken),
             ""
@@ -82,19 +82,19 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
             bytes("")
         );
 
-        assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + amountToMint);
+        assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE + amountToSend);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
     }
 
-    modifier reachGlobalMintLimit() {
+    modifier reachGlobalCreditLimit() {
         vm.startPrank(users.owner);
-        /// @dev By setting the mint daily limit to 0, we direclty reach the global mint limit
-        bBridgeableToken.setGlobalMintLimit(0);
+        /// @dev By setting the credit daily limit to 0, we direclty reach the global credit limit
+        bBridgeableToken.setGlobalCreditLimit(0);
         _;
     }
 
-    function test_LzReceive_LzPAR(uint256 amountToMint) external reachGlobalMintLimit {
-        amountToMint = _boundBridgeAmount(amountToMint, 1e18, DEFAULT_BURN_DAILY_LIMIT);
+    function test_LzReceive_LzPAR(uint256 amountToSend) external reachGlobalCreditLimit {
+        amountToSend = _boundBridgeAmount(amountToSend, 1e18, DEFAULT_DAILY_DEBIT_LIMIT);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
         (uint256 gas, uint256 value) = OptionsHelper._parseExecutorLzReceiveOption(options);
@@ -102,8 +102,8 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
         SendParam memory sendParam = SendParam(
             bEid,
             addressToBytes32(users.alice),
-            amountToMint,
-            amountToMint,
+            amountToSend,
+            amountToSend,
             options,
             abi.encode(sendLzToken),
             ""
@@ -123,7 +123,7 @@ contract BridgeableToken_LzReceive_Integrations_Test is Integrations_Test {
         );
 
         assertEq(bPar.balanceOf(users.alice), INITIAL_BALANCE);
-        assertEq(bBridgeableToken.balanceOf(users.alice), amountToMint);
+        assertEq(bBridgeableToken.balanceOf(users.alice), amountToSend);
         assertEq(bPar.balanceOf(users.feesRecipient), 0);
     }
 

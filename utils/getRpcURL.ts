@@ -15,7 +15,7 @@ export const getRpcURL = (network: string): string => {
         case 'amoy': {
             return `https://polygon-amoy.g.alchemy.com/v2/${apiKey}`
         }
-        case 'arbSepolia': {
+        case 'arbiSepolia': {
             return `https://arb-sepolia.g.alchemy.com/v2/${apiKey}`
         }
         case 'fantom': {
