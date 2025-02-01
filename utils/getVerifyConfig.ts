@@ -7,6 +7,15 @@ type VerifyConfig = {
 
 export const getVerifyConfig = (network: string): VerifyConfig => {
     switch (network) {
+        case 'mainnet': {
+            if (!process.env.ETHERSCAN_API_KEY) throw new Error('MAINNET_ETHERSCAN_API_KEY is not set')
+            return {
+                etherscan: {
+                    apiUrl: 'https://api.etherscan.io',
+                    apiKey: process.env.ETHERSCAN_API_KEY,
+                },
+            }
+        }
         case 'sepolia': {
             if (!process.env.ETHERSCAN_API_KEY) throw new Error('ETHERSCAN_API_KEY is not set')
             return {
@@ -16,21 +25,40 @@ export const getVerifyConfig = (network: string): VerifyConfig => {
                 },
             }
         }
-        case 'amoy': {
-            if (!process.env.POLYSCAN_API_KEY) throw new Error('POLYSCAN_API_KEY is not set')
+        case 'polygon': {
+            if (!process.env.POLYGON_ETHERSCAN_API_KEY) throw new Error('POLYGON_ETHERSCAN_API_KEY is not set')
+            console.log('POLYGON_ETHERSCAN_API_KEY', process.env.POLYGON_ETHERSCAN_API_KEY)
             return {
                 etherscan: {
-                    apiUrl: 'https://api-amoy.polygonscan.com',
-                    apiKey: process.env.POLYSCAN_API_KEY,
+                    apiUrl: 'https://api.polygonscan.com',
+                    apiKey: process.env.POLYGON_ETHERSCAN_API_KEY,
                 },
             }
         }
-        case 'arbSepolia': {
-            if (!process.env.ARBISCAN_API_KEY) throw new Error('ARBISCAN_API_KEY is not set')
+        case 'amoy': {
+            if (!process.env.POLYGON_ETHERSCAN_API_KEY) throw new Error('POLYGON_ETHERSCAN_API_KEY is not set')
+            return {
+                etherscan: {
+                    apiUrl: 'https://api-amoy.polygonscan.com',
+                    apiKey: process.env.POLYGON_ETHERSCAN_API_KEY,
+                },
+            }
+        }
+        case 'arbiSepolia': {
+            if (!process.env.ARBITRUM_ETHERSCAN_API_KEY) throw new Error('ARBITRUM_ETHERSCAN_API_KEY is not set')
             return {
                 etherscan: {
                     apiUrl: 'https://api-sepolia.arbiscan.io',
-                    apiKey: process.env.ARBISCAN_API_KEY,
+                    apiKey: process.env.ARBITRUM_ETHERSCAN_API_KEY,
+                },
+            }
+        }
+        case 'fantom': {
+            if (!process.env.FANTOM_ETHERSCAN_API_KEY) throw new Error('FANTOM_ETHERSCAN_API_KEY is not set')
+            return {
+                etherscan: {
+                    apiUrl: 'https://api.ftmscan.com',
+                    apiKey: process.env.FANTOM_ETHERSCAN_API_KEY,
                 },
             }
         }

@@ -10,16 +10,10 @@ library ErrorsLib {
     error AddressZero();
 
     /// @notice Thrown when the amount of token to bridge from the current chain exceed the daily limit.
-    error BurnDailyLimitReached();
+    error DailyDebitLimitReached();
 
     /// @notice Thrown when the amount of token to bridge from the current chain exceed the global limit allowed.
-    error GlobalBurnLimitReached();
-
-    /// @notice Thrown when the amount to transfer exceed to limit.
-    error MaxAmountTransferReached();
-
-    /// @notice Thrown when a token to transfer doesn't have code.
-    error NoCode();
+    error GlobalDebitLimitReached();
 
     /// @notice Thrown when the new fees rate exceeds the maximum fees.
     error MaxFeesRateExceeded();
@@ -27,24 +21,12 @@ library ErrorsLib {
     /// @notice Thrown when in isolate mode the amount to bridge exceed the total amount minted on the current chain.
     error IsolateModeLimitReach();
 
-    /// @notice Thrown when a token transfer reverted.
-    error TransferReverted();
-
-    /// @notice Thrown when a token transfer returned false.
-    error TransferReturnedFalse();
-
-    /// @notice Thrown when a token transferFrom reverted.
-    error TransferFromReverted();
-
-    /// @notice Thrown when a token transferFrom returned false
-    error TransferFromReturnedFalse();
-
-    /// @notice Thrown when the amount of OFT token to withdraw in principalToken exceeds the limit.
-    error MintLimitExceeded();
-
     /// @notice Thrown when the new globalLimit value exceed `MAX_GLOBAL_LIMIT`.
     error GlobalLimitOverFlow();
 
     /// @notice Thrown when the msg length is invalid.
     error InvalidMsgLength();
+
+    /// @notice Thrown when the amount of OFT token to swap in principalToken is 0.
+    error NothingToSwap();
 }

@@ -4,12 +4,12 @@ This document refers the information for auditing the `BridgeableToken` contract
 
 ## File Scope
 
-| File                                                                                                                                                  |      [nSLOC](#nowhere "(nSLOC, nLines, Lines)")      | Description                                                                                                        | Libraries                                                                                                                                                                                                                 |
-| :---------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| File                                                                                                                                                  |      [nSLOC](#nowhere "(nSLOC, nLines, Lines)")      | Description                                                                                                       | Libraries                                                                                                                                                                                                                                                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | _Contracts (3)_                                                                                                                                       |
-| [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)           | [279](#nowhere "(nSLOC:289, nLines:517, Lines:550)") | Main contract that sends and receives LayerZero messages, handling the minting and burning of the principal token. | [`@openzeppelin/*`](https://openzeppelin.com/contracts/) [`@layerzerolabs/lz-evm-oapp-v2/*`](https://github.com/LayerZero-Labs/LayerZero-v2/tree/417cbb9eb68a4f678490d18728973c8c99f3f017/packages/layerzero-v2/evm/oapp) |
-| [contracts/libraries/MathLib.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/libraries/MathLib.sol)                     |   [13](#nowhere "(nSLOC:13, nLines:22, Lines:22)")   | Maths library helper                                                                                               | -                                                                                                                                                                                                                         |
-| [contracts/libraries/PercentageMathLib.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/libraries/PercentageMathLib.sol) |   [24](#nowhere "(nSLOC:24, nLines:48, Lines:48)")   | Library to handle percentage maths                                                                                 | -                                                                                                                                                                                                                         |
+| [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)           | [326](#nowhere "(nSLOC:326, nLines:587, Lines:623)") | Main contract that sends and receives LayerZero messages, handling the credit/debit logic of the principal token. | [`@openzeppelin/*`](https://openzeppelin.com/contracts/) [`@layerzerolabs/lz-evm-oapp-v2/evm/oapp`](https://github.com/LayerZero-Labs/LayerZero-v2/tree/417cbb9eb68a4f678490d18728973c8c99f3f017/packages/layerzero-v2/evm/oapp) [`layerZero/*`](https://github.com/parallel-protocol/prl-token/blob/main/contracts/layerZero/) |
+| [contracts/libraries/MathLib.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/libraries/MathLib.sol)                     |   [18](#nowhere "(nSLOC:18, nLines:28, Lines:28)")   | Maths library helper                                                                                              | -                                                                                                                                                                                                                                                                                                                               |
+| [contracts/libraries/PercentageMathLib.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/libraries/PercentageMathLib.sol) |   [24](#nowhere "(nSLOC:24, nLines:48, Lines:48)")   | Library to handle percentage maths                                                                                | -                                                                                                                                                                                                                                                                                                                               |
 
 ## Out of scope
 
@@ -18,21 +18,21 @@ All other files in the repository are out of scope for this audit.
 ## External imports
 
 - **@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@openzeppelin/contracts/access/Ownable.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@openzeppelin/contracts/token/ERC20/IERC20.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@openzeppelin/contracts/utils/Pausable.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 - **@openzeppelin/contracts/utils/ReentrancyGuard.sol**
-  - [contracts/tokens/BridgeableToken.sol#L1](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol#L1)
+  - [contracts/tokens/BridgeableToken.sol](https://github.com/parallel-protocol/bridging-module/blob/main/contracts/tokens/BridgeableToken.sol)
 
 ## Additional context
 
@@ -69,20 +69,20 @@ The contract is tested using the `foundry` framework. The tests are located in t
 
 Make sure to have [foundry](https://book.getfoundry.sh/getting-started/installation) install.
 
-### Run tests
+## Run tests
 
 There are 2 types of tests:
 
 - Classic tests (Units/Integrations) :
 
 ```bash
-npm run test
+bun run test
 ```
 
 - Invariant tests:
 
 ```bash
-npm run test:invariant
+bun run test:invariant
 ```
 
 ## Running Static Analysis
@@ -130,3 +130,72 @@ This creates a scenario where users can bypass the fee mechanism of the bridge b
 2. Bridge OFTs from chain B to PTs on chain C. The user will not be charged any fees for this transfer because the bridge burned OFTs on chain B and not PTs.
 
 This is a known issue, and we accept it because while users may skip the contract fees, they will still pay the LayerZero bridge fees twice, which could result in a higher cost than the fees of the bridgeable token.
+
+### Fees are charged on OFT token bridging if limits are reached
+
+When the credit limits are met, users get minted OFT tokens when
+bridging which can be swapped for principal tokens at a later stage.
+However, to allow unsatisfied users to roll back their bridging
+transaction, the protocol does not charge any fees if OFT tokens are
+being bridged for principal tokens. This way users can revert their
+transaction at no fee cost if they are minted OFT tokens.
+
+However, the issue is that this fee-less bridge rollback is not always
+possible. This happens when the credit limits are met on the source
+chain as well. Consider the following scenario:
+
+1. Alice wants to bridge principal tokens from chainA to chain B.
+   Alice calls send on chainA and her principal tokens are locked
+   in the bridge.
+2. In chainB, the mint limit has already been met. So Alice gets
+   minted OFT tokens instead.
+3. Alice is unhappy and wants to revert her transaction. She calls
+   send on chainB with isPrincipalTokenSent set to false.
+4. In chainA, the mint limit has already been met. Thus Alice gets
+   minted OFT tokens on chainA as well.
+
+In the scenario above, Alice is unable to roll back her bridging
+transaction for no fees. She can call swapLzTokenToPrincipalToken to
+swap the OFT tokens for principal tokens on chainA, but this will
+charge her fees.
+
+This issue may happen by chance but can also be triggered by a
+malicious user. The malicious user can frontrun the transaction and fill
+the limits in order for the user who will then receive OFT tokens which
+they have to pay a fee for if they want back the principal tokens.
+
+### Bridging will not be possible if all chains are set to isolateMode
+
+Due to how `isolateMode` works, if all chains are set to this mode and
+`_config.initialCreditDebitBalance` is also 0 on all chains, bridging will
+be impossible. We accept this issue because the bridgeable token is not
+meant to be used in this mode on all chains.
+
+### Centralization risk introduced by emergencyRescue function
+
+The bridge is meant to lock most principal tokens.
+This means the amount of tokens held by the contract will in most
+cases result in a large amount of tokens being stored on the bridge.
+The emergency withdrawal function allows the owner to withdraw the
+total amount without any restrictions.
+This makes the risk of private key compromise even more severe.
+Furthermore, when emergencyWithdraw is called, the tokens are sent
+out and are unable to unlock during credit transactions so the contract
+is forced to mint out tokens instead and raise the
+`principalTokenAmountMinted`. Thus the protocol effectively is indebted
+to the admin until they return the tokens only after which the
+`principalTokenAmountMinted` can return to 0 with debits.
+
+We accept this issue as the contract owner will be an AccessManager contract from OpenZeppelin standard.
+We had to use the `Ownable` contract from OpenZeppelin to comply with LayerZero's OFT contract.
+
+## Audit amendments
+
+Here are the logic/code changes made since the last audit:
+
+- Refactored of `BridgeableToken` contract :
+  - The contract will now lock the principal token instead of burning them by default.
+  - The contract will only mint new principal tokens if it doesn't have enough of them to credit the user.
+  - When new principal tokens are minted, the contract will track the amount minted and will burn future principal tokens that will be bridged out until the amount minted is 0.
+  - Add an `emergencyWithdraw` function to allow owner to withdraw principal tokens in the contract in case of an emergency.
+  - Renamed `mint` and `burn` related variables/functions to `credit` and `debit` to better reflect the logic of the contract.

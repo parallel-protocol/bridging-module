@@ -3,7 +3,6 @@ pragma solidity 0.8.22;
 
 import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 import { MessagingFee, MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
-import { MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 
 import "../Invariants.t.sol";
 
@@ -11,12 +10,13 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
     using OptionsBuilder for bytes;
 
     uint256 constant DEFAULT_MAX_BRIDGE_AMOUNT = 10e18;
-    uint256 constant CHAIN_PAR_INITIAL_SUPPLY = INITIAL_BALANCE * 2;
+    uint256 constant TOTAL_PAR_INITIAL_SUPPLY = INITIAL_BALANCE * 2;
 
     struct BridgeCall {
         address sendingBridgeableToken;
         address receivingBridgeableTokensContract;
         uint32 receivingEid;
+        ERC20Mock principalToken;
     }
 
     BridgeCall[] internal bridgeableTokensContract;
@@ -26,6 +26,7 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         _weightSelector(this.sendNoRevert.selector, 100);
         _weightSelector(this.getLzToken.selector, 80);
         _weightSelector(this.swapLzTokenToPrincipalTokenNoRevert.selector, 20);
+        _weightSelector(this.lockPrincipalToken.selector, 20);
 
         super.setUp();
 
@@ -33,7 +34,8 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
             BridgeCall({
                 sendingBridgeableToken: address(aBridgeableToken),
                 receivingBridgeableTokensContract: address(bBridgeableToken),
-                receivingEid: bEid
+                receivingEid: bEid,
+                principalToken: aPar
             })
         );
 
@@ -41,7 +43,8 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
             BridgeCall({
                 sendingBridgeableToken: address(bBridgeableToken),
                 receivingBridgeableTokensContract: address(aBridgeableToken),
-                receivingEid: aEid
+                receivingEid: aEid,
+                principalToken: bPar
             })
         );
     }
@@ -50,7 +53,7 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
     // Invariants functions
     //-------------------------------------------
 
-    function invariant_NetMintAmountMatchBalances() external {
+    function invariant_CreditDebitBalanceMatchBalances() external {
         uint256 aliceBalanceAPar = aPar.balanceOf(users.alice);
         uint256 aliceBalanceBPar = bPar.balanceOf(users.alice);
 
@@ -63,8 +66,8 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         uint256 totalAPar = aliceBalanceAPar + bobBalanceAPar + feesRecipientBalanceAPar;
         uint256 totalBPar = aliceBalanceBPar + bobBalanceBPar + feesRecipientBalanceBPar;
 
-        assertEq(aBridgeableToken.getNetMintedAmount(), int256(totalAPar) - int256(CHAIN_PAR_INITIAL_SUPPLY));
-        assertEq(bBridgeableToken.getNetMintedAmount(), int256(totalBPar) - int256(CHAIN_PAR_INITIAL_SUPPLY));
+        assertEq(aBridgeableToken.getCreditDebitBalance(), int256(totalAPar) - int256(TOTAL_PAR_INITIAL_SUPPLY));
+        assertEq(bBridgeableToken.getCreditDebitBalance(), int256(totalBPar) - int256(TOTAL_PAR_INITIAL_SUPPLY));
     }
 
     function invariant_ParInitialSupplyMatchParPlusLzParSupply() external {
@@ -76,10 +79,9 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
 
         uint256 feesRecipientBalanceAPar = aPar.balanceOf(users.feesRecipient);
         uint256 feesRecipientBalanceBPar = bPar.balanceOf(users.feesRecipient);
-
         uint256 totalAPar = aliceBalanceAPar + bobBalanceAPar + feesRecipientBalanceAPar;
         uint256 totalBPar = aliceBalanceBPar + bobBalanceBPar + feesRecipientBalanceBPar;
-        _assertTotalSupply(CHAIN_PAR_INITIAL_SUPPLY * 2, totalAPar, totalBPar);
+        _assertTotalSupply(TOTAL_PAR_INITIAL_SUPPLY * 2, totalAPar, totalBPar);
     }
 
     //-------------------------------------------
@@ -114,7 +116,12 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         uint256 senderLzBalance = bridgeableToken.balanceOf(msg.sender);
         if (senderLzBalance == 0) return;
         amountToSwap = _boundBridgeAmount(amountToSwap, 1e18, senderLzBalance);
-        bridgeableToken.swapLzTokenToPrincipalToken(amountToSwap);
+        bridgeableToken.swapLzTokenToPrincipalToken(users.alice, amountToSwap);
+    }
+
+    function lockPrincipalToken(uint256 amountToLock, uint256 bridgeSeed) external logCall("lockPrincipalToken") {
+        BridgeCall memory bridgeCall = _randomBridgeableTokenContract(bridgeSeed);
+        bridgeCall.principalToken.mint(address(bridgeCall.sendingBridgeableToken), amountToLock);
     }
 
     //-------------------------------------------
@@ -126,14 +133,14 @@ contract BridgeableToken_Invariants_Test is Invariants_Test {
         BridgeCall memory bridgeCall = _randomBridgeableTokenContract(bridgeSeed);
         BridgeableToken bridgeableToken = BridgeableToken(bridgeCall.receivingBridgeableTokensContract);
         vm.startPrank(users.owner);
-        bridgeableToken.setMintDailyLimit(0);
+        bridgeableToken.setDailyCreditLimit(0);
         vm.stopPrank();
 
         vm.startPrank(sender);
         _bridgeToken(lzAmountToReceive, true, bridgeCall);
 
         vm.startPrank(users.owner);
-        bridgeableToken.setMintDailyLimit(DEFAULT_MINT_DAILY_LIMIT);
+        bridgeableToken.setDailyCreditLimit(DEFAULT_DAILY_CREDIT_LIMIT);
         vm.stopPrank();
 
         vm.startPrank(sender);

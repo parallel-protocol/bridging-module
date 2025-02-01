@@ -9,10 +9,12 @@ export type BridgeableTokenConfig = {
     principalTokenAddress: Address
     delegate: Address
     feesRecipient: Address
-    mintDailyLimit: BigNumberish
-    globalMintLimit: BigNumberish
-    burnDailyLimit: BigNumberish
-    globalBurnLimit: BigNumberish
+    dailyCreditLimit: BigNumberish
+    globalCreditLimit: BigNumberish
+    dailyDebitLimit: BigNumberish
+    globalDebitLimit: BigNumberish
+    initialPrincipalTokenAmountMinted: BigNumberish
+    initialCreditDebitBalance: BigNumberish
     feesRate: number
     isIsolateMode: boolean
 }

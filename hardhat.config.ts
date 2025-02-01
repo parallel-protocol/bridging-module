@@ -6,12 +6,13 @@
 import 'dotenv/config'
 
 import '@typechain/hardhat'
-import '@nomicfoundation/hardhat-ethers'
 
 import 'hardhat-deploy'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
+import '@nomicfoundation/hardhat-verify'
 import '@layerzerolabs/toolbox-hardhat'
+
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 
 import { EndpointId } from '@layerzerolabs/lz-definitions'
@@ -55,23 +56,45 @@ const config: HardhatUserConfig = {
         ],
     },
     networks: {
+        mainnet: {
+            eid: EndpointId.ETHEREUM_V2_MAINNET,
+            url: getRpcURL('mainnet'),
+            verify: getVerifyConfig('mainnet'),
+            accounts,
+        },
         sepolia: {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
             url: getRpcURL('sepolia'),
-            accounts,
             verify: getVerifyConfig('sepolia'),
+            accounts,
+        },
+        polygon: {
+            eid: EndpointId.POLYGON_V2_MAINNET,
+            url: getRpcURL('polygon'),
+            verify: getVerifyConfig('polygon'),
+            accounts,
         },
         amoy: {
             eid: EndpointId.AMOY_V2_TESTNET,
             url: getRpcURL('amoy'),
-            accounts,
             verify: getVerifyConfig('amoy'),
-        },
-        arbSepolia: {
-            eid: EndpointId.ARBSEP_V2_TESTNET,
-            url: getRpcURL('arbSepolia'),
             accounts,
-            verify: getVerifyConfig('arbSepolia'),
+        },
+        arbiSepolia: {
+            eid: EndpointId.ARBSEP_V2_TESTNET,
+            url: getRpcURL('arbiSepolia'),
+            verify: getVerifyConfig('arbiSepolia'),
+            accounts,
+        },
+        fantom: {
+            eid: EndpointId.FANTOM_V2_MAINNET,
+            url: getRpcURL('fantom'),
+            verify: getVerifyConfig('fantom'),
+            accounts,
+        },
+        hardhat: {
+            // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
+            allowUnlimitedContractSize: true,
         },
     },
     namedAccounts: {

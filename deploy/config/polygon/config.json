@@ -1,0 +1,16 @@
+{
+  "lzName": "lz-PAR",
+  "lzSymbol": "lz-PAR",
+  "principalTokenSymbol": "PAR",
+  "principalTokenAddress": "0xE2Aa7db6dA1dAE97C5f5C6914d285fBfCC32A128",
+  "delegate": "0x3676b6ed4ae0c9ce3E0034510719fdF5fd585d55",
+  "feesRecipient": "0x2046c0416A558C40cb112E5ebB0Ca764c3C5c32a",
+  "dailyCreditLimit": "25000000000000000000000",
+  "globalCreditLimit": "200000000000000000000000",
+  "dailyDebitLimit": "25000000000000000000000",
+  "globalDebitLimit": "200000000000000000000000",
+  "initialCreditDebitBalance": "195655779950000000000000",
+  "initialPrincipalTokenAmountMinted": "195655779950000000000000",
+  "feesRate": 0,
+  "isIsolateMode": false
+}

@@ -5,7 +5,6 @@ import { type DeployFunction } from 'hardhat-deploy/types'
 
 import { BridgeableToken } from '../typechain-types/contracts/tokens/BridgeableToken'
 
-import { GAS } from './utils'
 import { BridgeableTokenConfig } from './utils/types'
 
 const contractName = 'BridgeableToken'
@@ -26,14 +25,17 @@ const deploy: DeployFunction = async (hre) => {
     )
 
     const configParams: BridgeableToken.ConfigParamsStruct = {
-        mintDailyLimit: config.mintDailyLimit,
-        globalMintLimit: config.globalBurnLimit,
-        burnDailyLimit: config.burnDailyLimit,
-        globalBurnLimit: config.globalBurnLimit,
+        dailyCreditLimit: config.dailyCreditLimit,
+        globalCreditLimit: config.globalCreditLimit,
+        dailyDebitLimit: config.dailyDebitLimit,
+        globalDebitLimit: config.globalDebitLimit,
+        initialPrincipalTokenAmountMinted: config.initialPrincipalTokenAmountMinted,
+        initialCreditDebitBalance: config.initialCreditDebitBalance,
         feesRecipient: config.feesRecipient,
         feesRate: config.feesRate,
         isIsolateMode: config.isIsolateMode,
     }
+
     // This is an external deployment pulled in from @layerzerolabs/lz-evm-sdk-v2
     //
     // @layerzerolabs/toolbox-hardhat takes care of plugging in the external deployments
@@ -65,7 +67,6 @@ const deploy: DeployFunction = async (hre) => {
         ],
         log: true,
         skipIfAlreadyDeployed: false,
-        ...GAS,
     })
 
     console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${bridgeableToken.address}`)
