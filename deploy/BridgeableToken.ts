@@ -35,6 +35,7 @@ const deploy: DeployFunction = async (hre) => {
         feesRate: config.feesRate,
         isIsolateMode: config.isIsolateMode,
     }
+
     // This is an external deployment pulled in from @layerzerolabs/lz-evm-sdk-v2
     //
     // @layerzerolabs/toolbox-hardhat takes care of plugging in the external deployments

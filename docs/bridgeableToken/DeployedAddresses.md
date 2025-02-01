@@ -9,14 +9,14 @@
 | Contract              | Explore                                                                                                               |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | BridgeableToken PAR   | [0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F](https://etherscan.io/address/0x5208f5dE46c25273E2Fb8d5a73d605997BC4CA3F) |
-| BridgeableToken paUSD | [0xe0a86C3A7038E33Cb31531222Fae33a51B5022B2](https://etherscan.io/address/0xe0a86C3A7038E33Cb31531222Fae33a51B5022B2) |
+| BridgeableToken paUSD | [0xd4DEE6E089969600d3359CdbCd34E3111BC838eB](https://etherscan.io/address/0xd4DEE6E089969600d3359CdbCd34E3111BC838eB) |
 
 ### Polygon
 
 | Contract              | Explore                                                                                                                  |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | BridgeableToken PAR   | [0x917b9D8E62739986EC182E0f988C7F938651aFD7](https://polygonscan.com/address/0x917b9D8E62739986EC182E0f988C7F938651aFD7) |
-| BridgeableToken paUSD | [0x7e6bc0Dc649f5E48842c881E97666C7E21d0a433](https://polygonscan.com/address/0x7e6bc0Dc649f5E48842c881E97666C7E21d0a433) |
+| BridgeableToken paUSD | [0x4311321f144e2cf24df87deefe79E9C4E232273b](https://polygonscan.com/address/0x4311321f144e2cf24df87deefe79E9C4E232273b) |
 
 ### Fantom
 
